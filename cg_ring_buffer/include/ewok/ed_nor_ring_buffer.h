@@ -71,7 +71,7 @@ class EuclideanDistanceNormalRingBuffer
         ne.setInputCloud(pcl_cloud);
         pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
         ne.setSearchMethod(tree);
-        ne.setRadiusSearch(0.03);
+        ne.setRadiusSearch(0.4);
         ne.compute(*normals);
 
         // concatenate normals and points

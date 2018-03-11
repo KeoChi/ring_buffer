@@ -7,6 +7,7 @@ add_definitions(-std=c++11 -g -O3 -ftree-vectorize -march=native)
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp
+    message_filters
 )
 find_package(catkin_simple REQUIRED)
 find_package(Eigen3 REQUIRED)
@@ -18,6 +19,12 @@ add_definitions(${PCL_DEFINITIONS})
 include_directories(${PCL_INCLUDE_DIRS})
 include_directories(${EIGEN3_INCLUDE_DIR} ${OCTOMAP_INCLUDE_DIRS})
 message("EIGEN3_INCLUDE_DIR:${EIGEN3_INCLUDE_DIR}")
+# link_directories(${PCL_LIBRARY_DIRS})
+
+add_executable(realtime_example src/realtime_example.cpp)
+target_link_libraries(realtime_example ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+
+install(TARGETS realtime_example RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/../../../devel/lib/${PROJECT_NAME})
 
 catkin_simple()
 
@@ -25,9 +32,6 @@ cs_add_executable(ring_buffer_example src/ring_buffer_example.cpp)
 cs_add_executable(tum_rgbd_ring_buffer_example src/tum_rgbd_ring_buffer_example.cpp)
 target_link_libraries(tum_rgbd_ring_buffer_example ${OCTOMAP_LIBRARIES})
 
-# link_directories(${PCL_LIBRARY_DIRS})
-cs_add_executable(pointcloud_example src/pointcloud_example.cpp)
-target_link_libraries(pointcloud_example ${PCL_LIBRARIES})
 
 
 catkin_add_gtest(test_ring_buffer_base test/ring-buffer-base-test.cpp)
