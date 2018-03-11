@@ -27,6 +27,7 @@
             "name": "Linux",
             "includePath": [
                 "/opt/ros/kinetic/include",
+                "/home/zby/workspaces/fork_traj_ws/src/ewok_ring_buffer/cg_ring_buffer/include",
                 "/home/zby/workspaces/fork_traj_ws/src/ewok_ring_buffer/include",
                 "/usr/include/c++/5",
                 "/usr/include/x86_64-linux-gnu/c++/5",
@@ -43,6 +44,7 @@
             "browse": {
                 "path": [
                     "/opt/ros/kinetic/include",
+                    "/home/zby/workspaces/fork_traj_ws/src/ewok_ring_buffer/cg_ring_buffer/include",
                     "/home/zby/workspaces/fork_traj_ws/src/ewok_ring_buffer/include",
                     "/usr/include/c++/5",
                     "/usr/include/x86_64-linux-gnu/c++/5",

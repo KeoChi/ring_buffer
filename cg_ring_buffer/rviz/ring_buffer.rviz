@@ -6,10 +6,8 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
-        - /Marker1
-        - /Marker2
-        - /Marker3
-        - /OccupancyGrid1
+        - /NormalMarker1
+        - /NormalMarker1/Status1
       Splitter Ratio: 0.497155994
     Tree Height: 466
   - Class: rviz/Selection
@@ -69,19 +67,19 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /ring_buffer/free
-      Name: Marker
+      Name: FreeMarker
       Namespaces:
         {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /ring_buffer/occupied
-      Name: Marker
+      Name: OccupiedMarker
       Namespaces:
-        {}
+        ring_buffer_occupied: true
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -93,14 +91,14 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: octomap_rviz_plugin/OccupancyGrid
-      Enabled: true
+      Enabled: false
       Max. Height Display: 3.40282347e+38
       Max. Octree Depth: 16
       Min. Height Display: -3.40282347e+38
       Name: OccupancyGrid
       Octomap Topic: /octomap
       Queue Size: 5
-      Value: true
+      Value: false
       Voxel Alpha: 1
       Voxel Coloring: Z-Axis
       Voxel Rendering: Occupied Voxels
@@ -110,6 +108,14 @@ Visualization Manager:
       Name: Axes
       Radius: 0.100000001
       Reference Frame: <Fixed Frame>
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /ring_buffer/normal
+      Name: NormalMarker
+      Namespaces:
+        normal: true
+      Queue Size: 100
       Value: true
   Enabled: true
   Global Options:
@@ -136,25 +142,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 12.8211775
+      Distance: 19.1338253
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -0.854932725
-        Y: 2.61745167
-        Z: 1.11955667
+        X: 5.41460848
+        Y: 4.17146301
+        Z: -0.141799361
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.339798093
+      Pitch: 0.189796254
       Target Frame: world
       Value: Orbit (rviz)
-      Yaw: 3.30110335
+      Yaw: 3.50109982
     Saved: ~
 Window Geometry:
   Displays:

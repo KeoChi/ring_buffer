@@ -23,7 +23,7 @@ static const int POW = 6;
 static const int N = (1 << POW);
 ewok::EuclideanDistanceNormalRingBuffer<POW> rrb(resolution, 1.0);
 
-ros::Publisher occ_marker_pub, free_marker_pub, dist_marker_pub;
+ros::Publisher occ_marker_pub, free_marker_pub, dist_marker_pub, norm_marker_pub;
 
 void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs::PointCloud2ConstPtr& cloud)
 {
@@ -94,14 +94,16 @@ void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs
     rrb.updateDistance();
 
     // visualize ringbuffer
-    visualization_msgs::Marker m_occ, m_free, m_dist;
+    visualization_msgs::Marker m_occ, m_free, m_dist, m_norm;
     rrb.getMarkerOccupied(m_occ);
     rrb.getMarkerFree(m_free);
     rrb.getMarkerDistance(m_dist, 0.5);
+    rrb.getMarkerNormal(m_norm);
 
     occ_marker_pub.publish(m_occ);
     free_marker_pub.publish(m_free);
     dist_marker_pub.publish(m_dist);
+    norm_marker_pub.publish(m_norm);
 
     _last_time = ros::Time::now();
 }
@@ -115,10 +117,11 @@ int main(int argc, char** argv)
     occ_marker_pub = nh.advertise<visualization_msgs::Marker>("ring_buffer/occupied", 5, true);
     free_marker_pub = nh.advertise<visualization_msgs::Marker>("ring_buffer/free", 5, true);
     dist_marker_pub = nh.advertise<visualization_msgs::Marker>("ring_buffer/distance", 5, true);
+    norm_marker_pub = nh.advertise<visualization_msgs::Marker>("ring_buffer/normal", 5, true);
 
     // define synchronizer
-    message_filters::Subscriber<nav_msgs::Odometry> odom_sub(nh, "/zed/odom", 30);
-    message_filters::Subscriber<sensor_msgs::PointCloud2> pcl_sub(nh, "/zed/point_cloud/cloud_registered", 30);
+    message_filters::Subscriber<nav_msgs::Odometry> odom_sub(nh, "/zed/odom", 1);
+    message_filters::Subscriber<sensor_msgs::PointCloud2> pcl_sub(nh, "/zed/point_cloud/cloud_registered", 1);
     typedef sync_policies::ApproximateTime<nav_msgs::Odometry, sensor_msgs::PointCloud2> MySyncPolicy;
     Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), odom_sub, pcl_sub);
     sync.registerCallback(boost::bind(&odomCloudCallback, _1, _2));

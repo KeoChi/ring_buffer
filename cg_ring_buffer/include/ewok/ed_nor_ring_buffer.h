@@ -55,7 +55,7 @@ class EuclideanDistanceNormalRingBuffer
         // convert to pcl pointcloud, compute normal, and insert
 
         // convert to pcl pointcloud
-        pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud (new pcl::PointCloud<pcl::PointXYZ>);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud(new pcl::PointCloud<pcl::PointXYZ>);
         for(int i = 0; i < int(cloud.size()); ++i)
         {
             pcl::PointXYZ p;
@@ -71,7 +71,7 @@ class EuclideanDistanceNormalRingBuffer
         ne.setInputCloud(pcl_cloud);
         pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
         ne.setSearchMethod(tree);
-        ne.setRadiusSearch(0.4);
+        ne.setRadiusSearch(6 * resolution_);
         ne.compute(*normals);
 
         // concatenate normals and points
@@ -117,9 +117,17 @@ class EuclideanDistanceNormalRingBuffer
                     {
                         float norm = sqrt(pow(norm_buffer_x_.at(coord), 2) + pow(norm_buffer_y_.at(coord), 2) +
                                           pow(norm_buffer_z_.at(coord), 2));
-                        norm_buffer_x_.at(coord) /= norm;
-                        norm_buffer_y_.at(coord) /= norm;
-                        norm_buffer_z_.at(coord) /= norm;
+                        if(norm < 1e-3)
+                            norm_buffer_x_.at(coord) = norm_buffer_y_.at(coord) = norm_buffer_z_.at(coord) = 0.0;
+                        else
+                        {
+                            norm_buffer_x_.at(coord) /= norm;
+                            norm_buffer_y_.at(coord) /= norm;
+                            norm_buffer_z_.at(coord) /= norm;
+                        }
+
+                        // std::cout << "Normal at " << coord.transpose() << " is:" << norm_buffer_x_.at(coord) << ","
+                        //           << norm_buffer_y_.at(coord) << "," << norm_buffer_z_.at(coord) << std::endl;
                     }
                 }
             }
@@ -147,7 +155,52 @@ class EuclideanDistanceNormalRingBuffer
     }
 
     // Todo: add normal visualizer
-    // void getMarkerNormal(visualization_msgs::Marker & m){}
+    void getMarkerNormal(visualization_msgs::Marker &m)
+    {
+        // use line list to represent normal
+        m.type = visualization_msgs::Marker::LINE_LIST;
+        m.header.frame_id = "world";
+        m.header.stamp = ros::Time::now();
+        m.ns = "normal";
+        m.id = 0;
+        m.action = visualization_msgs::Marker::MODIFY;
+        m.scale.x = 0.03;
+
+        m.color.r = m.color.g = 1.0;
+        m.color.b = 0.0;
+        m.color.a = 0.5;
+
+        Vector3i off;
+        norm_buffer_x_.getOffset(off);
+
+        // add normal to line list
+        for(int x = 0; x < _N; x++)
+        {
+            for(int y = 0; y < _N; y++)
+            {
+                for(int z = 0; z < _N; z++)
+                {
+                    // only visualize occupied points' normal
+                    Vector3i coord(x, y, z);
+                    coord += off;
+                    if(!occupancy_buffer_.isOccupied(coord)) continue;
+
+                    geometry_msgs::Point p;
+                    // start point of normal, at voxel's center
+                    p.x = coord(0) * resolution_;
+                    p.y = coord(1) * resolution_;
+                    p.z = coord(2) * resolution_;
+                    m.points.push_back(p);
+
+                    // end point of normal
+                    p.x += 0.5 * norm_buffer_x_.at(coord);
+                    p.y += 0.5 * norm_buffer_y_.at(coord);
+                    p.z += 0.5 * norm_buffer_z_.at(coord);
+                    m.points.push_back(p);
+                }
+            }
+        }
+    }
 
     void getMarkerFree(visualization_msgs::Marker &m) { occupancy_buffer_.getMarkerFree(m); }
 
