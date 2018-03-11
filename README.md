@@ -1,6 +1,19 @@
 # ring_buffer
 
-Currently this project contains two ROS package, cg_mapping and cg_ring_buffer
+Currently this project contains two ROS package, cg_mapping and cg_ring_buffer. You can clone the whole project to your *catkin_ws/src* and then *catkin_make* it.
+
+```
+cd <SOME_PATH>/catkin_ws/src
+
+git clone https://github.com/ZbyLGsc/ring_buffer.git
+
+cd ..
+
+catkin_make
+```
+
+This will build both packages altogether.
+
 
 ## cg_mapping
 This package performs simple mapping, with synchronized pointcloud and camera pose as **input** and transformed pointcloud as **output**. It publish pointcloud every 0.5 second.
