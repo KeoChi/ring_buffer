@@ -59,6 +59,8 @@ void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs
     cloud_msg.header.stamp = ros::Time::now();
     cloud_pub.publish(cloud_msg);
     cloud_pub.publish(cloud_msg);
+
+    ros::Duration(0.5).sleep();
 }
 
 int main(int argc, char** argv)

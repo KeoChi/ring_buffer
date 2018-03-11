@@ -3,7 +3,7 @@
 Currently this project contains two ROS package, cg_mapping and cg_ring_buffer
 
 ## cg_mapping
-This package performs simple mapping, with synchronized pointcloud and camera pose as **input** and transformed pointcloud as **output**. 
+This package performs simple mapping, with synchronized pointcloud and camera pose as **input** and transformed pointcloud as **output**. It publish pointcloud every 0.5 second.
 
 Usage:
 
