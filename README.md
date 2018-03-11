@@ -27,5 +27,10 @@ Then open rviz with the **cloud.rviz** file. If everything runs correctly, you s
 
 ## cg_ring_buffer
 
-This package is a implement of RingBufferMap, which is always centralized around the camera(robot), and contains occupancy, signed distance and pointcloud normal information. It take pointcloud as input and update the RingBufferMap. 
+This package is a implement of RingBufferMap, which is always centralized around the camera(robot), and contains occupancy, signed distance and pointcloud normal information. 
+
+Usage:
+
+Run executable *realtime_example*, open *ring_buffer.rviz* and feed synchronized pointcloud and odometry as input. Please make sure that topics of *PointCloud* and *Odometry* are correctly set. 
+
  
