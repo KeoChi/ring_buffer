@@ -31,6 +31,15 @@ This package is a implement of RingBufferMap, which is always centralized around
 
 Usage:
 
-Run executable *realtime_example*, open *ring_buffer.rviz* and feed synchronized pointcloud and odometry as input. Please make sure that topics of *PointCloud* and *Odometry* are correctly set. 
+```
+roslaunch ewok_ring_buffer ring_buffer.launch
+
+rviz -d ring_buffer.rviz
+
+```
+Run *ring_buffer.launch*, open *ring_buffer.rviz* and feed synchronized pointcloud and odometry as input. Please make sure that topics of *PointCloud* and *Odometry* are correctly set. 
+
+The ring_buffer map is published as *visualization\_msgs::Marker*, as well as *PointCloud2*. The center of ring\_buffer map is published as *geometry\_msgs::PoseStamped*. They are synchronized using *header.stamp*, so you can use
+*message\_filters* to subscribe them.
 
  

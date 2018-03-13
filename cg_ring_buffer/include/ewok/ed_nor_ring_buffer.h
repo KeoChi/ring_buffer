@@ -158,17 +158,16 @@ class EuclideanDistanceNormalRingBuffer
     void getBufferAsCloud(pcl::PointCloud<pcl::PointXYZ> &cloud, Eigen::Vector3d &center)
     {
         // get center of ring buffer
-        Vector3i off;
-        norm_buffer_x_.getOffset(off);
-        Vector3i c_idx = getVolumeCenter()
-        c_idx += off;
+        Vector3i c_idx = getVolumeCenter();
         Vector3 ct;
-        getPoint(off, ct);
+        getPoint(c_idx, ct);
         center(0) = ct(0);
         center(1) = ct(1);
         center(2) = ct(2);
 
         // convert ring buffer to point cloud
+        Vector3i off;
+        norm_buffer_x_.getOffset(off);
         for(int x = 0; x < _N; x++)
         {
             for(int y = 0; y < _N; y++)
