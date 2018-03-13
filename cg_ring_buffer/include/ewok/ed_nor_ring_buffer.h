@@ -154,7 +154,46 @@ class EuclideanDistanceNormalRingBuffer
         norm_buffer_z_.moveVolume(direction);
     }
 
-    // Todo: add normal visualizer
+    // get ringbuffer as pointcloud
+    void getBufferAsCloud(pcl::PointCloud<pcl::PointXYZ> &cloud, Eigen::Vector3d &center)
+    {
+        // get center of ring buffer
+        Vector3i off;
+        norm_buffer_x_.getOffset(off);
+        Vector3i c_idx = getVolumeCenter()
+        c_idx += off;
+        Vector3 ct;
+        getPoint(off, ct);
+        center(0) = ct(0);
+        center(1) = ct(1);
+        center(2) = ct(2);
+
+        // convert ring buffer to point cloud
+        for(int x = 0; x < _N; x++)
+        {
+            for(int y = 0; y < _N; y++)
+            {
+                for(int z = 0; z < _N; z++)
+                {
+                    // only occupied voxel is return
+                    Vector3i coord(x, y, z);
+                    coord += off;
+                    if(occupancy_buffer_.isOccupied(coord))
+                    {
+                        Vector3 p;
+                        getPoint(coord, p);
+                        pcl::PointXYZ pclp;
+                        pclp.x = p(0);
+                        pclp.y = p(1);
+                        pclp.z = p(2);
+                        cloud.points.push_back(pclp);
+                    }
+                }
+            }
+        }
+    }
+
+    // Add normal visualizer
     void getMarkerNormal(visualization_msgs::Marker &m)
     {
         // use line list to represent normal

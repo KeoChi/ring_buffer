@@ -5,6 +5,7 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/time_synchronizer.h>
 
+#include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/PointCloud2.h>
 
@@ -24,11 +25,14 @@ static const int N = (1 << POW);
 ewok::EuclideanDistanceNormalRingBuffer<POW> rrb(resolution, 1.0);
 
 ros::Publisher occ_marker_pub, free_marker_pub, dist_marker_pub, norm_marker_pub;
+ros::Publisher cloud2_pub, center_pub;
+
+double map_rate, pub_rate;
 
 void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs::PointCloud2ConstPtr& cloud)
 {
     double elp = ros::Time::now().toSec() - _last_time.toSec();
-    if(elp < 0.3) return;
+    if(elp < (1 / map_rate)) return;
 
     ROS_INFO("Updating ringbuffer map");
     // get orientation and translation
@@ -108,6 +112,34 @@ void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs
     _last_time = ros::Time::now();
 }
 
+void timerCallback(const ros::TimerEvent& e)
+{
+    if(!initialized) return;
+
+    pcl::PointCloud<pcl::PointXYZ> cloud;
+    Eigen::Vector3d center;
+    rrb.getBufferAsCloud(cloud, center);
+
+    // convert to ROS message and publish
+    sensor_msgs::PointCloud2 cloud2;
+    pcl::toROSMsg(cloud, cloud2);
+
+    geometry_msgs::PoseStamped pose;
+    pose.pose.position.x = center(0);
+    pose.pose.position.y = center(1);
+    pose.pose.position.z = center(2);
+
+    // message publish should have the same time stamp
+    ros::Time stamp = ros::Time::now();
+    pose.header.stamp = stamp;
+    pose.header.frame_id = "world";
+    cloud2.header.stamp = stamp;
+    cloud2.header.frame_id = "world";
+
+    cloud2_pub.publish(cloud2);
+    center_pub.publish(pose);
+}
+
 int main(int argc, char** argv)
 {
     ros::init(argc, argv, "realtime_example");
@@ -118,17 +150,27 @@ int main(int argc, char** argv)
     free_marker_pub = nh.advertise<visualization_msgs::Marker>("ring_buffer/free", 5, true);
     dist_marker_pub = nh.advertise<visualization_msgs::Marker>("ring_buffer/distance", 5, true);
     norm_marker_pub = nh.advertise<visualization_msgs::Marker>("ring_buffer/normal", 5, true);
+    cloud2_pub = nh.advertise<sensor_msgs::PointCloud2>("ring_buffer/cloud2", 1, true);
+    center_pub = nh.advertise<geometry_msgs::PoseStamped>("ring_buffer/center", 1, true);
 
-    // define synchronizer
+    // synchronized subscriber for pointcloud and odometry
     message_filters::Subscriber<nav_msgs::Odometry> odom_sub(nh, "/zed/odom", 1);
     message_filters::Subscriber<sensor_msgs::PointCloud2> pcl_sub(nh, "/zed/point_cloud/cloud_registered", 1);
     typedef sync_policies::ApproximateTime<nav_msgs::Odometry, sensor_msgs::PointCloud2> MySyncPolicy;
     Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), odom_sub, pcl_sub);
     sync.registerCallback(boost::bind(&odomCloudCallback, _1, _2));
 
+    // get parameter
+    nh.getParam("/ring_buffer/map_rate", map_rate);
+    nh.getParam("/ring_buffer/publish_rate", pub_rate);
+    std::cout << map_rate << "," << pub_rate << std::endl;
+
+    // timer for publish ringbuffer as pointcloud
+    ros::Timer timer = nh.createTimer(ros::Duration(1 / pub_rate), timerCallback);
+
     ros::Duration(0.5).sleep();
     _last_time = ros::Time::now();
-    std::cout << "Start mapping!"<< std::endl;
+    std::cout << "Start mapping!" << std::endl;
 
     ros::spin();
 
