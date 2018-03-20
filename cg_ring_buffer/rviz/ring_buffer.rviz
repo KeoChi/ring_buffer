@@ -118,8 +118,8 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Alpha: 1
-      Axes Length: 1
-      Axes Radius: 0.100000001
+      Axes Length: 0.5
+      Axes Radius: 0.200000003
       Class: rviz/Pose
       Color: 0; 255; 127
       Enabled: true
@@ -128,7 +128,7 @@ Visualization Manager:
       Name: BufferCenter
       Shaft Length: 1
       Shaft Radius: 0.0500000007
-      Shape: Arrow
+      Shape: Axes
       Topic: /ring_buffer/center
       Unreliable: false
       Value: true
@@ -141,7 +141,7 @@ Visualization Manager:
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
-      Color: 85; 255; 0
+      Color: 170; 0; 255
       Color Transformer: FlatColor
       Decay Time: 0
       Enabled: true
@@ -187,25 +187,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 18.3525105
+      Distance: 23.1543083
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 5.02622271
-        Y: 5.35789824
-        Z: 0.327888161
+        X: 3.76484776
+        Y: 2.45225883
+        Z: -2.44373846
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.149796277
+      Pitch: 0.30479756
       Target Frame: world
       Value: Orbit (rviz)
-      Yaw: 3.65610337
+      Yaw: 3.04111958
     Saved: ~
 Window Geometry:
   Displays:
