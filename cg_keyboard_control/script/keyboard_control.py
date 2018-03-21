@@ -22,6 +22,7 @@ def main():
     vel = 1.5
     ang = 2.0
     while not rospy.is_shutdown():
+        time.sleep(0.05)
         # get key value and set Twist
         for event in pygame.event.get():
             # key down to set velocity
