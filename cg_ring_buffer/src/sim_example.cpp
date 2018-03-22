@@ -98,12 +98,19 @@ void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs
     }
     else
     {
-        Eigen::Vector3i origin_idx, offset, diff;
-        rrb.getIdx(origin, origin_idx);
-        offset = rrb.getVolumeCenter();
-        std::cout << "origin :" << origin_idx << " center:" << offset << std::endl;
-        diff = origin_idx - offset;
-        if(diff.array().any()) rrb.moveVolume(diff.head<3>());
+        // move buffer when its center is not the same as UAV
+        while(true)
+        {
+            Eigen::Vector3i origin_idx, offset, diff;
+            rrb.getIdx(origin, origin_idx);
+            offset = rrb.getVolumeCenter();
+            std::cout << "origin :" << origin_idx << " center:" << offset << std::endl;
+            diff = origin_idx - offset;
+            if(diff.array().any())
+                rrb.moveVolume(diff.head<3>());
+            else
+                break;
+        }
     }
     ROS_INFO("Updating ringbuffer map4");
     // insert point cloud to ringbuffer

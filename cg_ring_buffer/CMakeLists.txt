@@ -24,8 +24,8 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 # ${OCTOMAP_INCLUDE_DIRS})
 # link_directories(${PCL_LIBRARY_DIRS})
 
-add_executable(realtime_example src/realtime_example.cpp)
-target_link_libraries(realtime_example ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+# add_executable(realtime_example src/realtime_example.cpp)
+# target_link_libraries(realtime_example ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 add_executable(sim_example src/sim_example.cpp)
 target_link_libraries(sim_example ${PCL_LIBRARIES} ${catkin_LIBRARIES})

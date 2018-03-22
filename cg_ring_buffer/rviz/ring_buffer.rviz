@@ -66,13 +66,13 @@ Visualization Manager:
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /ring_buffer/free
       Name: FreeMarker
       Namespaces:
-        ring_buffer_free: true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: true
       Marker Topic: /ring_buffer/occupied
@@ -295,18 +295,18 @@ Visualization Manager:
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 3.21891832
-        Y: 0.429930896
-        Z: 1.35577905
+        X: 1.25494075
+        Y: 0.820395648
+        Z: -1.63186169
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.585202932
+      Pitch: 0.700202823
       Target Frame: world
       Value: Orbit (rviz)
-      Yaw: 3.09610605
+      Yaw: 3.13610649
     Saved: ~
 Window Geometry:
   Displays:
@@ -326,5 +326,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 933
-  X: 433
-  Y: 32
+  X: 439
+  Y: 33
