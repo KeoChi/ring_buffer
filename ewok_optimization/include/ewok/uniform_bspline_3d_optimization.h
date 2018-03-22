@@ -146,6 +146,10 @@ class UniformBSpline3DOptimization {
     return spline_.getControlPoint(cp_opt_start_idx);
   }
 
+  inline Vector3 getTrajControlPoint(int n) { return spline_.getControlPoint(n); }
+
+  inline Vector3 evalute(_Scalar t, int derivative) { return spline_.evaluate(t, derivative); }
+
   void setNumControlPointsOptimized(int n) {
     num_cp_opt = n;
 

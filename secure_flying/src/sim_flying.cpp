@@ -42,70 +42,14 @@ double map_rate, pub_rate;
 Eigen::Vector3d _current_pos;
 double _current_yaw;
 
-// this callback subscribe to keyboard command. When twist arrives, it first generate some waypoints
-// based on current odometry and twist. Then an optimized trajectory is computed to ensure safety
-void twistCallback(const geometry_msgs::TwistConstPtr msg)
-{
-    // generate some waypoints
-    typename ewok::Polynomial3DOptimization<10>::Vector3Array vec;
-    Eigen::Vector3d dir;
-    dir(0) = msg->linear.x * cos(_current_yaw) - msg->linear.y * sin(_current_yaw);
-    dir(1) = msg->linear.x * sin(_current_yaw) + msg->linear.y * cos(_current_yaw);
-    dir(2) = 0;
-    if(dir.norm() == 0.0) return;
+// trajectory publication
+ros::Time _traj_start_time;
+bool _traj_ready;
+ros::Publisher traj_point_pub;
 
-    dir.normalize();
-
-    for(int i = 0; i < 10; ++i)
-    {
-        Eigen::Vector3d wp;
-        wp = _current_pos + 0.5 * double(i) * dir;
-        vec.push_back(wp);
-        cout << wp.transpose() << endl;
-    }
-
-    // compute initial trajectory
-    const Eigen::Vector4d limits(1.2, 4, 0, 0);
-    ewok::Polynomial3DOptimization<10> po(limits * 0.8);
-    auto traj = po.computeTrajectory(vec);
-
-    // initialize bspline trajectory
-    const int num_points = 7;
-    const double dt = 0.5;
-    ewok::UniformBSpline3DOptimization<6> spline_opt(traj, dt);
-
-    for(int i = 0; i < num_points; i++)
-    {
-        spline_opt.addControlPoint(vec[0]);
-    }
-
-    spline_opt.setNumControlPointsOptimized(num_points);
-    spline_opt.setDistanceBuffer(rrb);
-    spline_opt.setLimits(limits);
-
-    // optimize the trajectory
-    double current_time = 0;
-    double total_opt_time = 0;
-    int num_iterations = 0;
-
-    while(current_time < traj->duration())
-    {
-        current_time += dt;
-        double t1 = ros::Time::now().toSec();
-        double error = spline_opt.optimize();
-        double t2 = ros::Time::now().toSec();
-        spline_opt.addLastControlPoint();
-
-        total_opt_time += (t2 - t1) * 1000;
-        num_iterations++;
-    }
-    cout << "iteration:" << num_iterations << ", total time:" << total_opt_time << " ms" << endl;
-
-    // visualize trajectory
-    visualization_msgs::MarkerArray traj_marker;
-    spline_opt.getMarkers(traj_marker, "optimization", Eigen::Vector3d(1, 1, 0), Eigen::Vector3d(0, 1, 0));
-    traj_pub.publish(traj_marker);
-}
+// trajectory generation
+Eigen::Vector3d _dir;
+ewok::UniformBSpline3DOptimization<6>::Ptr _spline_opt;
 
 // this callback use input cloud to update ring buffer, and update odometry of UAV
 void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs::PointCloud2ConstPtr& cloud)
@@ -226,6 +170,100 @@ void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs
     _last_time = ros::Time::now();
 }
 
+// this callback subscribe to keyboard command. When twist arrives, it first generate some waypoints
+// based on current odometry and twist. Then an optimized trajectory is computed to ensure safety
+void twistCallback(const geometry_msgs::TwistConstPtr msg)
+{
+    // update dir given from keyboard
+    _dir(0) = msg->linear.x * cos(_current_yaw) - msg->linear.y * sin(_current_yaw);
+    _dir(1) = msg->linear.x * sin(_current_yaw) + msg->linear.y * cos(_current_yaw);
+    _dir(2) = 0;
+
+    // generate global trajectory
+    if(_dir.norm() != 0)
+    {
+        _dir.normalize();
+        _traj_ready = false;
+
+        // generate some waypoints
+        typename ewok::Polynomial3DOptimization<10>::Vector3Array vec;
+        for(int i = 0; i < 20; ++i)
+        {
+            Eigen::Vector3d wp;
+            wp = _current_pos + 0.5 * double(i) * _dir;
+            vec.push_back(wp);
+            cout << wp.transpose() << " ; ";
+        }
+
+        // compute initial trajectory
+        const Eigen::Vector4d limits(1.2, 4, 0, 0);
+        ewok::Polynomial3DOptimization<10> po(limits * 0.8);
+        auto traj = po.computeTrajectory(vec);
+
+        // initialize bspline trajectory
+        const int num_points = 7;
+        const double dt = 0.5;
+        _spline_opt =
+            ewok::UniformBSpline3DOptimization<6>::Ptr(new ewok::UniformBSpline3DOptimization<6>(traj, 0.5));
+
+        for(int i = 0; i < num_points; i++)
+        {
+            _spline_opt->addControlPoint(vec[0]);
+        }
+
+        _spline_opt->setNumControlPointsOptimized(num_points);
+        _spline_opt->setDistanceBuffer(rrb);
+        _spline_opt->setLimits(limits);
+
+        _traj_ready = true;
+        _traj_start_time = ros::Time::now();
+    }
+}
+
+void trajTimerCallback(const ros::TimerEvent& e)
+{
+    // zero command, hovering message should be published
+    if(_dir.norm() == 0.0)
+    {
+        geometry_msgs::Point pt;
+        pt.x = pt.y = 0.0;
+        pt.z = -1;
+        traj_point_pub.publish(pt);
+        ROS_INFO("Hovering");
+        return;
+    }
+
+    if(!_traj_ready)
+    {
+        ROS_INFO("Wait for trajectory ready!");
+        return;
+    }
+
+    double t = ros::Time::now().toSec() - _traj_start_time.toSec();
+
+    double t1 = ros::Time::now().toSec();
+    rrb->updateDistance();
+    double t2 = ros::Time::now().toSec();
+    _spline_opt->optimize();
+    double t3 = ros::Time::now().toSec();
+    ROS_INFO("Update distance: %lf ms, optimization: %lf ms", (t2 - t1) * 1000, (t3 - t2) * 1000);
+
+    Eigen::Vector3d point = _spline_opt->getFirstOptimizationPoint();
+    geometry_msgs::Point pt;
+    pt.x = point(0);
+    pt.y = point(1);
+    pt.z = point(2);
+    ROS_INFO("To time: %lf, [%lf, %lf, %lf]", t, pt.x, pt.y, pt.z);
+    traj_point_pub.publish(pt);
+
+    // visualize trajectory
+    visualization_msgs::MarkerArray traj_marker;
+    _spline_opt->getMarkers(traj_marker, "optimization", Eigen::Vector3d(1, 1, 0), Eigen::Vector3d(0, 1, 0));
+    traj_pub.publish(traj_marker);
+
+    _spline_opt->addLastControlPoint();
+}
+
 void timerCallback(const ros::TimerEvent& e)
 {
     if(!initialized) return;
@@ -268,6 +306,7 @@ int main(int argc, char** argv)
     cloud2_pub = nh.advertise<sensor_msgs::PointCloud2>("ring_buffer/cloud2", 1, true);
     center_pub = nh.advertise<geometry_msgs::PoseStamped>("ring_buffer/center", 1, true);
     traj_pub = nh.advertise<visualization_msgs::MarkerArray>("ring_buffer/trajectory", 1, true);
+    traj_point_pub = nh.advertise<geometry_msgs::Point>("ring_buffer/desire_point", 5, true);
 
     // synchronized subscriber for pointcloud and odometry
     message_filters::Subscriber<nav_msgs::Odometry> odom_sub(nh, "/firefly/ground_truth/odometry", 1);
@@ -283,10 +322,18 @@ int main(int argc, char** argv)
     // get parameter
     nh.getParam("/ring_buffer/map_rate", map_rate);
     nh.getParam("/ring_buffer/publish_rate", pub_rate);
+    double interval;
+    nh.getParam("/ring_buffer/traj_interval", interval);
     std::cout << map_rate << "," << pub_rate << std::endl;
 
+    _traj_ready = false;
+    _dir = Eigen::Vector3d::Zero();
+
     // timer for publish ringbuffer as pointcloud
-    ros::Timer timer = nh.createTimer(ros::Duration(1 / pub_rate), timerCallback);
+    ros::Timer timer1 = nh.createTimer(ros::Duration(1 / pub_rate), timerCallback);
+
+    // timer for publish trajectory waypoint
+    ros::Timer timer2 = nh.createTimer(ros::Duration(0.5), trajTimerCallback);
 
     ros::Duration(0.5).sleep();
 
@@ -295,7 +342,7 @@ int main(int argc, char** argv)
         new ewok::EuclideanDistanceNormalRingBuffer<POW>(resolution, 1.0));
 
     _last_time = ros::Time::now();
-    std::cout << "Start mapping!" << std::endl;
+    std::cout << "Start auto secure flying!" << std::endl;
 
     ros::spin();
 

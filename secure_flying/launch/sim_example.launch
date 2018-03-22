@@ -3,6 +3,8 @@
 
       <param name="map_rate" value="20" type="double"/>
       <param name="publish_rate" value="1" type="double"/>
+      <param name="traj_interval" value="0.5" type="double"/>
+
 
     </node>
 </launch>
