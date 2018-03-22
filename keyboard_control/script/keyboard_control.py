@@ -16,13 +16,13 @@ def main():
     # initialize ros publisher
     twist_pub = rospy.Publisher('keyboard/twist', Twist, queue_size=10)
     rospy.init_node('keyboard_control')
-    rate = rospy.Rate(20)
+    rate = rospy.Rate(10)
 
     _twist = Twist()
     vel = 1.5
     ang = 2.0
     while not rospy.is_shutdown():
-        time.sleep(0.05)
+        rate.sleep()
         # get key value and set Twist
         for event in pygame.event.get():
             # key down to set velocity

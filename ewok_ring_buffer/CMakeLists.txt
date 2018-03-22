@@ -3,8 +3,7 @@ project(ewok_ring_buffer)
 
 # set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH}" "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-add_definitions(-std=c++11 -g -O3)
-#  -ftree-vectorize -march=native)
+add_definitions(-std=c++11 -g -O3 -ftree-vectorize -march=native)
 
 find_package(catkin REQUIRED COMPONENTS
     roscpp
@@ -24,11 +23,9 @@ include_directories(${PROJECT_SOURCE_DIR}/include)
 # ${OCTOMAP_INCLUDE_DIRS})
 # link_directories(${PCL_LIBRARY_DIRS})
 
-# add_executable(realtime_example src/realtime_example.cpp)
-# target_link_libraries(realtime_example ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+add_executable(realtime_example src/realtime_example.cpp)
+target_link_libraries(realtime_example ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
-add_executable(sim_example src/sim_example.cpp)
-target_link_libraries(sim_example ${PCL_LIBRARIES} ${catkin_LIBRARIES})
 
 # install(TARGETS realtime_example RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/../../../devel/lib/${PROJECT_NAME})
 

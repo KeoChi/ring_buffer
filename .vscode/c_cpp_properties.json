@@ -35,7 +35,10 @@
                 "/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed",
                 "/usr/include/x86_64-linux-gnu",
                 "/usr/include",
-                "${workspaceRoot}"
+                "${workspaceRoot}",
+                "${workspaceRoot}/ewok_optimization/include",
+                "${workspaceRoot}/ewok_ring_buffer/include",
+                "${workspaceRoot}/ewok_poly_spline/include"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",

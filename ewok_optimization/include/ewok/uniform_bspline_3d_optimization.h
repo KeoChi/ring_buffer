@@ -26,7 +26,7 @@
 
 #include <ewok/uniform_bspline_3d.h>
 #include <ewok/polynomial_trajectory_3d.h>
-#include <ewok/ed_ring_buffer.h>
+#include <ewok/ed_nor_ring_buffer.h>
 
 #include <visualization_msgs/MarkerArray.h>
 
@@ -119,7 +119,7 @@ class UniformBSpline3DOptimization {
     }
   }
 
-  void setDistanceBuffer(EuclideanDistanceRingBuffer<6>::Ptr & edrb) {
+  void setDistanceBuffer(EuclideanDistanceNormalRingBuffer<6>::Ptr & edrb) {
     edrb_ = edrb;
   }
 
@@ -134,8 +134,12 @@ class UniformBSpline3DOptimization {
   }
 
   void addLastControlPoint() {
+    // debug, what the last control point
+    // std::cout << spline_.getControlPoint(spline_.size() - 1) << std::endl;
+    
     spline_.push_back(spline_.getControlPoint(spline_.size()-1));
     cp_opt_start_idx++;
+
   }
 
   inline Vector3 getFirstOptimizationPoint() {
@@ -181,6 +185,9 @@ class UniformBSpline3DOptimization {
     std::vector<double> x(3*num_cp_opt);
 
     spline_.getControlPointsData(x, cp_opt_start_idx, num_cp_opt);
+
+    // debug, what is the control points?
+    // for(int i = 0; i < 3 * num_cp_opt; ++i) std::cout << x[i] << ",";
 
     double minf;
     nlopt::result result = optimizer->optimize(x, minf);
@@ -627,7 +634,7 @@ class UniformBSpline3DOptimization {
 
   std::shared_ptr<nlopt::opt> optimizer, trajectory_time_optimizer;
 
-  EuclideanDistanceRingBuffer<6>::Ptr edrb_;
+  EuclideanDistanceNormalRingBuffer<6>::Ptr edrb_;
 
   ewok::PolynomialTrajectory3D<10>::Ptr trajectory_;
 

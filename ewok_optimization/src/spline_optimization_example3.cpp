@@ -120,40 +120,37 @@ int main(int argc, char **argv) {
   int num_iterations = 0;
 
   ros::Rate r(1.0/dt);
-  while (ros::ok() && current_time < traj->duration()) {
-    r.sleep();
-    current_time += dt;
+  visualization_msgs::MarkerArray before_opt_markers, after_opt_markers;
 
-    visualization_msgs::MarkerArray before_opt_markers, after_opt_markers;
+  while(ros::ok() && current_time < traj->duration())
+  {
+      // r.sleep();
+      current_time += dt;
 
-    spline_opt.getMarkers(before_opt_markers, "before_opt",
-                          Eigen::Vector3d(1, 0, 0),
-                          Eigen::Vector3d(1, 0, 0));
+      spline_opt.getMarkers(before_opt_markers, "before_opt", Eigen::Vector3d(1, 0, 0),
+                            Eigen::Vector3d(1, 0, 0));
 
-    auto t1 = std::chrono::high_resolution_clock::now();
-    double error = spline_opt.optimize();
-    auto t2 = std::chrono::high_resolution_clock::now();
+      auto t1 = std::chrono::high_resolution_clock::now();
+      double error = spline_opt.optimize();
+      auto t2 = std::chrono::high_resolution_clock::now();
 
-    double miliseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() / 1.0e6;
+      double miliseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(t2 - t1).count() / 1.0e6;
 
-    total_opt_time += miliseconds;
-    num_iterations++;
+      total_opt_time += miliseconds;
+      num_iterations++;
 
+      ROS_INFO_STREAM("Finished optimization in " << miliseconds << " ms. Error: " << error);
 
-    ROS_INFO_STREAM("Finished optimization in " << miliseconds << " ms. Error: " << error);
+      spline_opt.addLastControlPoint();
 
-    spline_opt.getMarkers(after_opt_markers, "after_opt",
-                          Eigen::Vector3d(0, 1, 0),
-                          Eigen::Vector3d(0, 1, 1));
-
-    after_opt_pub.publish(after_opt_markers);
-
-    spline_opt.addLastControlPoint();
-
-    ros::spinOnce();
+      ros::spinOnce();
   }
 
+  spline_opt.getMarkers(after_opt_markers, "after_opt", Eigen::Vector3d(0, 1, 0), Eigen::Vector3d(0, 1, 1));
+  after_opt_pub.publish(after_opt_markers);
+
   ROS_INFO_STREAM("Mean optimization time " << total_opt_time/num_iterations);
+  std::cout << num_iterations << "," << total_opt_time << std::endl;
 
   return 0;
 }

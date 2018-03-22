@@ -10,6 +10,7 @@ find_package(Eigen3 REQUIRED)
 find_package(SuiteSparse REQUIRED)
 
 include_directories(${EIGEN3_INCLUDE_DIR} ${CHOLMOD_INCLUDE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/../ewok_ring_buffer/include)
 
 catkin_simple()
 
@@ -21,8 +22,8 @@ target_link_libraries(spline_optimization_example /usr/local/lib/libnlopt.so.0.9
 cs_add_executable(spline_optimization_example2 src/spline_optimization_example2.cpp)
 target_link_libraries(spline_optimization_example2 /usr/local/lib/libnlopt.so.0.9.0)
 
-cs_add_executable(spline_optimization_example3 src/spline_optimization_example3.cpp)
-target_link_libraries(spline_optimization_example3 ${CHOLMOD_LIBRARY} /usr/local/lib/libnlopt.so.0.9.0)
+# cs_add_executable(spline_optimization_example3 src/spline_optimization_example3.cpp)
+# target_link_libraries(spline_optimization_example3 ${CHOLMOD_LIBRARY} /usr/local/lib/libnlopt.so.0.9.0)
 
 cs_add_executable(polynomial_optimization_example src/polynomial_optimization_example.cpp)
 target_link_libraries(polynomial_optimization_example ${CHOLMOD_LIBRARY})

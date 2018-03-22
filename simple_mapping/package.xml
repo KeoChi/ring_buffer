@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>cg_mapping</name>
+  <name>simple_mapping</name>
   <version>0.0.0</version>
   <description>The cg_mapping package</description>
 

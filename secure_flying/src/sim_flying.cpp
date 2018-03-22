@@ -1,11 +1,18 @@
 #include <ewok/ed_nor_ring_buffer.h>
+
+#include <ewok/polynomial_3d_optimization.h>
+#include <ewok/uniform_bspline_3d_optimization.h>
+
 #include <ros/ros.h>
+
+#include <tf/transform_datatypes.h>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/time_synchronizer.h>
 
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
 #include <sensor_msgs/PointCloud2.h>
 
@@ -14,6 +21,7 @@
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 using namespace message_filters;
+using namespace std;
 
 // global declaration
 ros::Time _last_time;
@@ -22,19 +30,103 @@ bool initialized = false;
 const double resolution = 0.1;
 static const int POW = 6;
 static const int N = (1 << POW);
-ewok::EuclideanDistanceNormalRingBuffer<POW> rrb(resolution, 1.0);
+ewok::EuclideanDistanceNormalRingBuffer<POW>::Ptr rrb;
 
 ros::Publisher occ_marker_pub, free_marker_pub, dist_marker_pub, norm_marker_pub;
-ros::Publisher cloud2_pub, center_pub;
+ros::Publisher cloud2_pub, center_pub, traj_pub;
 
+// parameters
 double map_rate, pub_rate;
 
+// current odometry
+Eigen::Vector3d _current_pos;
+double _current_yaw;
+
+// this callback subscribe to keyboard command. When twist arrives, it first generate some waypoints
+// based on current odometry and twist. Then an optimized trajectory is computed to ensure safety
+void twistCallback(const geometry_msgs::TwistConstPtr msg)
+{
+    // generate some waypoints
+    typename ewok::Polynomial3DOptimization<10>::Vector3Array vec;
+    Eigen::Vector3d dir;
+    dir(0) = msg->linear.x * cos(_current_yaw) - msg->linear.y * sin(_current_yaw);
+    dir(1) = msg->linear.x * sin(_current_yaw) + msg->linear.y * cos(_current_yaw);
+    dir(2) = 0;
+    if(dir.norm() == 0.0) return;
+
+    dir.normalize();
+
+    for(int i = 0; i < 10; ++i)
+    {
+        Eigen::Vector3d wp;
+        wp = _current_pos + 0.5 * double(i) * dir;
+        vec.push_back(wp);
+        cout << wp.transpose() << endl;
+    }
+
+    // compute initial trajectory
+    const Eigen::Vector4d limits(1.2, 4, 0, 0);
+    ewok::Polynomial3DOptimization<10> po(limits * 0.8);
+    auto traj = po.computeTrajectory(vec);
+
+    // initialize bspline trajectory
+    const int num_points = 7;
+    const double dt = 0.5;
+    ewok::UniformBSpline3DOptimization<6> spline_opt(traj, dt);
+
+    for(int i = 0; i < num_points; i++)
+    {
+        spline_opt.addControlPoint(vec[0]);
+    }
+
+    spline_opt.setNumControlPointsOptimized(num_points);
+    spline_opt.setDistanceBuffer(rrb);
+    spline_opt.setLimits(limits);
+
+    // optimize the trajectory
+    double current_time = 0;
+    double total_opt_time = 0;
+    int num_iterations = 0;
+
+    while(current_time < traj->duration())
+    {
+        current_time += dt;
+        double t1 = ros::Time::now().toSec();
+        double error = spline_opt.optimize();
+        double t2 = ros::Time::now().toSec();
+        spline_opt.addLastControlPoint();
+
+        total_opt_time += (t2 - t1) * 1000;
+        num_iterations++;
+    }
+    cout << "iteration:" << num_iterations << ", total time:" << total_opt_time << " ms" << endl;
+
+    // visualize trajectory
+    visualization_msgs::MarkerArray traj_marker;
+    spline_opt.getMarkers(traj_marker, "optimization", Eigen::Vector3d(1, 1, 0), Eigen::Vector3d(0, 1, 0));
+    traj_pub.publish(traj_marker);
+}
+
+// this callback use input cloud to update ring buffer, and update odometry of UAV
 void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs::PointCloud2ConstPtr& cloud)
 {
     double elp = ros::Time::now().toSec() - _last_time.toSec();
     // if(elp < (1 / map_rate)) return;
 
-    ROS_INFO("Updating ringbuffer map");
+    // update odometry
+    _current_pos(0) = odom->pose.pose.position.x;
+    _current_pos(1) = odom->pose.pose.position.y;
+    _current_pos(2) = odom->pose.pose.position.z;
+
+    tf::Quaternion q1(odom->pose.pose.orientation.x, odom->pose.pose.orientation.y,
+                      odom->pose.pose.orientation.z, odom->pose.pose.orientation.w);
+    tf::Matrix3x3 m(q1);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+    _current_yaw = yaw;
+
+    // ROS_INFO("Updating ringbuffer map");
+    // update ring buffer
     // tranform from optical frame to uav frame
     Eigen::Matrix4f t_c_b = Eigen::Matrix4f::Zero();
     t_c_b(0, 2) = 1;
@@ -67,7 +159,7 @@ void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_2(new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::transformPointCloud(*cloud_in, *cloud_1, t_c_b);
     pcl::transformPointCloud(*cloud_1, *cloud_2, transform);
-    ROS_INFO("Updating ringbuffer map1");
+
     // down-sample
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::VoxelGrid<pcl::PointXYZRGB> sor;
@@ -75,7 +167,6 @@ void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs
     float res = 0.1f;
     sor.setLeafSize(res, res, res);
     sor.filter(*cloud_filtered);
-    ROS_INFO("Updating ringbuffer map2");
 
     // compute ewol pointcloud and origin
     Eigen::Vector3f origin = (transform * Eigen::Vector4f(0, 0, 0, 1)).head<3>();
@@ -86,14 +177,14 @@ void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs
     {
         cloud_ew.push_back(Eigen::Vector4f(points.at(i).x, points.at(i).y, points.at(i).z, 0));
     }
-    ROS_INFO("Updating ringbuffer map3");
+
     // initialize the ringbuffer map
     if(!initialized)
     {
         Eigen::Vector3i idx;
-        rrb.getIdx(origin, idx);
+        rrb->getIdx(origin, idx);
         ROS_INFO_STREAM("Origin: " << origin.transpose() << " idx " << idx.transpose());
-        rrb.setOffset(idx);
+        rrb->setOffset(idx);
         initialized = true;
     }
     else
@@ -102,29 +193,30 @@ void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs
         while(true)
         {
             Eigen::Vector3i origin_idx, offset, diff;
-            rrb.getIdx(origin, origin_idx);
-            offset = rrb.getVolumeCenter();
-            std::cout << "origin :" << origin_idx << " center:" << offset << std::endl;
+            rrb->getIdx(origin, origin_idx);
+            offset = rrb->getVolumeCenter();
+            // std::cout << "origin :" << origin_idx << " center:" << offset << std::endl;
             diff = origin_idx - offset;
             if(diff.array().any())
-                rrb.moveVolume(diff.head<3>());
+                rrb->moveVolume(diff.head<3>());
             else
                 break;
         }
     }
-    ROS_INFO("Updating ringbuffer map4");
+
     // insert point cloud to ringbuffer
-    rrb.insertPointCloud(cloud_ew, origin);
-    rrb.updateDistance();
-    ROS_INFO("Updating ringbuffer map5");
+    double t1 = ros::Time::now().toSec();
+    rrb->insertPointCloud(cloud_ew, origin);
+    rrb->updateDistance();
+    double t2 = ros::Time::now().toSec();
+    ROS_INFO("Updating ringbuffer time: %lf ms", 1000 * (t2 - t1));
 
     // visualize ringbuffer
     visualization_msgs::Marker m_occ, m_free, m_dist, m_norm;
-    rrb.getMarkerOccupied(m_occ);
-    rrb.getMarkerFree(m_free);
-    rrb.getMarkerDistance(m_dist, 0.5);
-    rrb.getMarkerNormal(m_norm);
-    ROS_INFO("Updating ringbuffer map6");
+    rrb->getMarkerOccupied(m_occ);
+    // rrb->getMarkerFree(m_free);
+    // rrb->getMarkerDistance(m_dist, 0.5);
+    // rrb->getMarkerNormal(m_norm);
 
     occ_marker_pub.publish(m_occ);
     free_marker_pub.publish(m_free);
@@ -140,7 +232,7 @@ void timerCallback(const ros::TimerEvent& e)
 
     pcl::PointCloud<pcl::PointXYZ> cloud;
     Eigen::Vector3d center;
-    rrb.getBufferAsCloud(cloud, center);
+    rrb->getBufferAsCloud(cloud, center);
 
     // convert to ROS message and publish
     sensor_msgs::PointCloud2 cloud2;
@@ -172,8 +264,10 @@ int main(int argc, char** argv)
     free_marker_pub = nh.advertise<visualization_msgs::Marker>("ring_buffer/free", 5, true);
     dist_marker_pub = nh.advertise<visualization_msgs::Marker>("ring_buffer/distance", 5, true);
     norm_marker_pub = nh.advertise<visualization_msgs::Marker>("ring_buffer/normal", 5, true);
+
     cloud2_pub = nh.advertise<sensor_msgs::PointCloud2>("ring_buffer/cloud2", 1, true);
     center_pub = nh.advertise<geometry_msgs::PoseStamped>("ring_buffer/center", 1, true);
+    traj_pub = nh.advertise<visualization_msgs::MarkerArray>("ring_buffer/trajectory", 1, true);
 
     // synchronized subscriber for pointcloud and odometry
     message_filters::Subscriber<nav_msgs::Odometry> odom_sub(nh, "/firefly/ground_truth/odometry", 1);
@@ -182,6 +276,9 @@ int main(int argc, char** argv)
     typedef sync_policies::ApproximateTime<nav_msgs::Odometry, sensor_msgs::PointCloud2> MySyncPolicy;
     Synchronizer<MySyncPolicy> sync(MySyncPolicy(10), odom_sub, pcl_sub);
     sync.registerCallback(boost::bind(&odomCloudCallback, _1, _2));
+
+    // keyboard
+    ros::Subscriber twist_sub = nh.subscribe("/keyboard/twist", 1, twistCallback);
 
     // get parameter
     nh.getParam("/ring_buffer/map_rate", map_rate);
@@ -192,6 +289,11 @@ int main(int argc, char** argv)
     ros::Timer timer = nh.createTimer(ros::Duration(1 / pub_rate), timerCallback);
 
     ros::Duration(0.5).sleep();
+
+    // setup ring buffer
+    rrb = ewok::EuclideanDistanceNormalRingBuffer<POW>::Ptr(
+        new ewok::EuclideanDistanceNormalRingBuffer<POW>(resolution, 1.0));
+
     _last_time = ros::Time::now();
     std::cout << "Start mapping!" << std::endl;
 
