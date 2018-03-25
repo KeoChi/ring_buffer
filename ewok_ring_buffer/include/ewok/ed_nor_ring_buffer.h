@@ -52,34 +52,34 @@ class EuclideanDistanceNormalRingBuffer
     {
         occupancy_buffer_.insertPointCloud(cloud, origin);
 
-        // convert to pcl pointcloud, compute normal, and insert
+        // // convert to pcl pointcloud, compute normal, and insert
 
-        // convert to pcl pointcloud
-        pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-        for(int i = 0; i < int(cloud.size()); ++i)
-        {
-            pcl::PointXYZ p;
-            p.x = cloud.at(i)(0);
-            p.y = cloud.at(i)(1);
-            p.z = cloud.at(i)(2);
-            pcl_cloud->points.push_back(p);
-        }
+        // // convert to pcl pointcloud
+        // pcl::PointCloud<pcl::PointXYZ>::Ptr pcl_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+        // for(int i = 0; i < int(cloud.size()); ++i)
+        // {
+        //     pcl::PointXYZ p;
+        //     p.x = cloud.at(i)(0);
+        //     p.y = cloud.at(i)(1);
+        //     p.z = cloud.at(i)(2);
+        //     pcl_cloud->points.push_back(p);
+        // }
 
-        // compute normal
-        pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
-        pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
-        ne.setInputCloud(pcl_cloud);
-        pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
-        ne.setSearchMethod(tree);
-        ne.setRadiusSearch(6 * resolution_);
-        ne.compute(*normals);
+        // // compute normal
+        // pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
+        // pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> ne;
+        // ne.setInputCloud(pcl_cloud);
+        // pcl::search::KdTree<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>());
+        // ne.setSearchMethod(tree);
+        // ne.setRadiusSearch(6 * resolution_);
+        // ne.compute(*normals);
 
-        // concatenate normals and points
-        pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals(new pcl::PointCloud<pcl::PointNormal>);
-        pcl::concatenateFields(*pcl_cloud, *normals, *cloud_with_normals);
+        // // concatenate normals and points
+        // pcl::PointCloud<pcl::PointNormal>::Ptr cloud_with_normals(new pcl::PointCloud<pcl::PointNormal>);
+        // pcl::concatenateFields(*pcl_cloud, *normals, *cloud_with_normals);
 
-        // insert normal
-        insertPointCloudNormal(*cloud_with_normals);
+        // // insert normal
+        // insertPointCloudNormal(*cloud_with_normals);
     }
 
     // Add normal updating

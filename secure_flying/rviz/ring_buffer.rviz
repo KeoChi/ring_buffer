@@ -6,9 +6,10 @@ Panels:
       Expanded:
         - /Global Options1
         - /Status1
+        - /OccupiedMarker1
         - /trajectory1
       Splitter Ratio: 0.497155994
-    Tree Height: 438
+    Tree Height: 359
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -78,7 +79,7 @@ Visualization Manager:
       Marker Topic: /ring_buffer/occupied
       Name: OccupiedMarker
       Namespaces:
-        ring_buffer_occupied: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Marker
@@ -268,7 +269,7 @@ Visualization Manager:
       Marker Topic: /ring_buffer/trajectory
       Name: trajectory
       Namespaces:
-        optimization: true
+        {}
       Queue Size: 100
       Value: true
   Enabled: true
@@ -296,25 +297,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 15.6266193
+      Distance: 20.4732857
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.73200202
-        Y: 1.24078858
-        Z: -1.04947829
+        X: 0.575956762
+        Y: 1.21320939
+        Z: -2.37841892
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.670202851
+      Pitch: 0.715202749
       Target Frame: world
       Value: Orbit (rviz)
-      Yaw: 3.17610192
+      Yaw: 3.10110235
     Saved: ~
 Window Geometry:
   Displays:
@@ -334,5 +335,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 768
-  X: -13
-  Y: 78
+  X: 45
+  Y: 24

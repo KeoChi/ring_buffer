@@ -16,20 +16,20 @@ catkin_simple()
 
 # set(nlopt_lib_dir /usr/local/lib/libnlopt.so.0.9.0) 
 
-cs_add_executable(spline_optimization_example src/spline_optimization_example.cpp)
-target_link_libraries(spline_optimization_example /usr/local/lib/libnlopt.so.0.9.0)
+# cs_add_executable(spline_optimization_example src/spline_optimization_example.cpp)
+# target_link_libraries(spline_optimization_example /usr/local/lib/libnlopt.so.0.9.0)
 
-cs_add_executable(spline_optimization_example2 src/spline_optimization_example2.cpp)
-target_link_libraries(spline_optimization_example2 /usr/local/lib/libnlopt.so.0.9.0)
+# cs_add_executable(spline_optimization_example2 src/spline_optimization_example2.cpp)
+# target_link_libraries(spline_optimization_example2 /usr/local/lib/libnlopt.so.0.9.0)
 
 # cs_add_executable(spline_optimization_example3 src/spline_optimization_example3.cpp)
 # target_link_libraries(spline_optimization_example3 ${CHOLMOD_LIBRARY} /usr/local/lib/libnlopt.so.0.9.0)
 
-cs_add_executable(polynomial_optimization_example src/polynomial_optimization_example.cpp)
-target_link_libraries(polynomial_optimization_example ${CHOLMOD_LIBRARY})
+# cs_add_executable(polynomial_optimization_example src/polynomial_optimization_example.cpp)
+# target_link_libraries(polynomial_optimization_example ${CHOLMOD_LIBRARY})
 
-catkin_add_gtest(test_uniform_bspline_3d_optimization test/uniform-bspline-3d-optimization-test.cpp)
-target_link_libraries(test_uniform_bspline_3d_optimization /usr/local/lib/libnlopt.so.0.9.0)
+# catkin_add_gtest(test_uniform_bspline_3d_optimization test/uniform-bspline-3d-optimization-test.cpp)
+# target_link_libraries(test_uniform_bspline_3d_optimization /usr/local/lib/libnlopt.so.0.9.0)
 
 cs_install()
 cs_export()

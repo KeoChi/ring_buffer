@@ -1,0 +1,58 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+Twist	../keyboard_control/script/keyboard_control.py	/^from geometry_msgs.msg import Twist$/;"	kind:namespace	line:6
+abspath	../ewok_ring_buffer/benchmarking/benchmark.py	/^abspath = os.path.abspath(__file__)$/;"	kind:variable	line:16
+argparse	../ewok_ring_buffer/benchmarking/associate.py	/^import argparse$/;"	kind:namespace	line:43
+args	../ewok_ring_buffer/benchmarking/associate.py	/^    args = parser.parse_args()$/;"	kind:variable	line:114
+associate	../ewok_ring_buffer/benchmarking/associate.py	/^def associate(first_list, second_list,offset,max_difference):$/;"	kind:function	line:71
+associate	../ewok_ring_buffer/benchmarking/benchmark.py	/^import associate$/;"	kind:namespace	line:6
+associate.py	../ewok_ring_buffer/benchmarking/associate.py	1;"	kind:file	line:1
+benchmark.py	../ewok_ring_buffer/benchmarking/benchmark.py	1;"	kind:file	line:1
+compute_limit_func	../ewok_ring_buffer/benchmarking/make_plots.py	/^def compute_limit_func(x, l):$/;"	kind:function	line:29
+data	../ewok_ring_buffer/benchmarking/benchmark.py	/^data = np.loadtxt('res.txt')$/;"	kind:variable	line:48
+data	../ewok_ring_buffer/benchmarking/make_plots.py	/^data = np.loadtxt('res.txt')$/;"	kind:variable	line:7
+dataset_url	../ewok_ring_buffer/benchmarking/benchmark.py	/^dataset_url = 'http:\/\/filecremers3.informatik.tu-muenchen.de\/rgbd\/dataset\/freiburg2\/rgbd_dataset_freiburg2_pioneer_slam.tgz'$/;"	kind:variable	line:11
+dname	../ewok_ring_buffer/benchmarking/benchmark.py	/^dname = os.path.dirname(abspath)$/;"	kind:variable	line:17
+f	../ewok_ring_buffer/benchmarking/benchmark.py	/^    f = open(filename + '\/depth_gt.txt', 'w')$/;"	kind:variable	line:37
+f_size	../ewok_ring_buffer/benchmarking/make_plots.py	/^f_size = (8,7)$/;"	kind:variable	line:14
+filename	../ewok_ring_buffer/benchmarking/benchmark.py	/^filename = 'rgbd_dataset_freiburg2_pioneer_slam'$/;"	kind:variable	line:13
+filename_zip	../ewok_ring_buffer/benchmarking/benchmark.py	/^filename_zip = 'rgbd_dataset_freiburg2_pioneer_slam.tgz'$/;"	kind:variable	line:12
+first_list	../ewok_ring_buffer/benchmarking/associate.py	/^    first_list = read_file_list(args.first_file)$/;"	kind:variable	line:116
+first_list	../ewok_ring_buffer/benchmarking/benchmark.py	/^    first_list = associate.read_file_list(filename + '\/depth.txt')$/;"	kind:variable	line:32
+keyboard_control.py	../keyboard_control/script/keyboard_control.py	1;"	kind:file	line:1
+l1	../ewok_ring_buffer/benchmarking/make_plots.py	/^l1 = 3.0$/;"	kind:variable	line:34
+l2	../ewok_ring_buffer/benchmarking/make_plots.py	/^l2 = 6.0$/;"	kind:variable	line:35
+l3	../ewok_ring_buffer/benchmarking/make_plots.py	/^l3 = 9.0$/;"	kind:variable	line:36
+main	../keyboard_control/script/keyboard_control.py	/^def main():$/;"	kind:function	line:9
+make_plots.py	../ewok_ring_buffer/benchmarking/make_plots.py	1;"	kind:file	line:1
+matches	../ewok_ring_buffer/benchmarking/associate.py	/^    matches = associate(first_list, second_list,float(args.offset),float(args.max_difference))    $/;"	kind:variable	line:119
+matches	../ewok_ring_buffer/benchmarking/benchmark.py	/^    matches = associate.associate(first_list, second_list, 0.0, 0.02)$/;"	kind:variable	line:35
+matplotlib	../ewok_ring_buffer/benchmarking/benchmark.py	/^import matplotlib.pyplot as plt$/;"	kind:namespace	line:8
+matplotlib	../ewok_ring_buffer/benchmarking/make_plots.py	/^import matplotlib.pyplot as plt$/;"	kind:namespace	line:3
+np	../ewok_ring_buffer/benchmarking/benchmark.py	/^import numpy as np$/;"	kind:namespace	line:9
+np	../ewok_ring_buffer/benchmarking/make_plots.py	/^import numpy as np$/;"	kind:namespace	line:4
+numpy	../ewok_ring_buffer/benchmarking/associate.py	/^import numpy$/;"	kind:namespace	line:46
+os	../ewok_ring_buffer/benchmarking/associate.py	/^import os$/;"	kind:namespace	line:45
+os	../ewok_ring_buffer/benchmarking/benchmark.py	/^import os$/;"	kind:namespace	line:4
+plt	../ewok_ring_buffer/benchmarking/benchmark.py	/^import matplotlib.pyplot as plt$/;"	kind:namespace	line:8
+plt	../ewok_ring_buffer/benchmarking/make_plots.py	/^import matplotlib.pyplot as plt$/;"	kind:namespace	line:3
+pygame	../keyboard_control/script/keyboard_control.py	/^import pygame$/;"	kind:namespace	line:1
+read_file_list	../ewok_ring_buffer/benchmarking/associate.py	/^def read_file_list(filename):$/;"	kind:function	line:49
+rospy	../keyboard_control/script/keyboard_control.py	/^import rospy$/;"	kind:namespace	line:5
+second_list	../ewok_ring_buffer/benchmarking/associate.py	/^    second_list = read_file_list(args.second_file)$/;"	kind:variable	line:117
+second_list	../ewok_ring_buffer/benchmarking/benchmark.py	/^    second_list = associate.read_file_list(filename + '\/groundtruth.txt')$/;"	kind:variable	line:33
+sys	../ewok_ring_buffer/benchmarking/associate.py	/^import sys$/;"	kind:namespace	line:44
+sys	../keyboard_control/script/keyboard_control.py	/^import sys$/;"	kind:namespace	line:4
+tar	../ewok_ring_buffer/benchmarking/benchmark.py	/^    tar = tarfile.open(filename_zip, "r:gz")$/;"	kind:variable	line:27
+tarfile	../ewok_ring_buffer/benchmarking/benchmark.py	/^import tarfile$/;"	kind:namespace	line:5
+testfile	../ewok_ring_buffer/benchmarking/benchmark.py	/^    testfile = urllib.URLopener()$/;"	kind:variable	line:22
+time	../keyboard_control/script/keyboard_control.py	/^import time$/;"	kind:namespace	line:3
+urllib	../ewok_ring_buffer/benchmarking/benchmark.py	/^import urllib$/;"	kind:namespace	line:3
+x	../ewok_ring_buffer/benchmarking/make_plots.py	/^x = np.arange(0, 10, 0.01)$/;"	kind:variable	line:38
+y1	../ewok_ring_buffer/benchmarking/make_plots.py	/^y1 = compute_limit_func(x, l1)$/;"	kind:variable	line:39
+y2	../ewok_ring_buffer/benchmarking/make_plots.py	/^y2 = compute_limit_func(x, l2)$/;"	kind:variable	line:40
+y3	../ewok_ring_buffer/benchmarking/make_plots.py	/^y3 = compute_limit_func(x, l3)$/;"	kind:variable	line:41

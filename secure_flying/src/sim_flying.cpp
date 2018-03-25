@@ -28,7 +28,7 @@ ros::Time _last_time;
 
 bool initialized = false;
 const double resolution = 0.1;
-static const int POW = 6;
+static const int POW = 7;
 static const int N = (1 << POW);
 ewok::EuclideanDistanceNormalRingBuffer<POW>::Ptr rrb;
 
@@ -50,6 +50,8 @@ ros::Publisher traj_point_pub;
 // trajectory generation
 Eigen::Vector3d _dir;
 ewok::UniformBSpline3DOptimization<6>::Ptr _spline_opt;
+double _point_spacing, _traj_update_time;
+int _point_num, _skip_num;
 
 // this callback use input cloud to update ring buffer, and update odometry of UAV
 void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs::PointCloud2ConstPtr& cloud)
@@ -170,8 +172,60 @@ void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs
     _last_time = ros::Time::now();
 }
 
-// this callback subscribe to keyboard command. When twist arrives, it first generate some waypoints
-// based on current odometry and twist. Then an optimized trajectory is computed to ensure safety
+// generate global trajectory
+void generateGlobalTrajectory(bool skip)
+{
+    _dir.normalize();
+    _traj_ready = false;
+
+    // generate some waypoints
+    typename ewok::Polynomial3DOptimization<10>::Vector3Array vec;
+    for(int i = 0; i < _point_num; ++i)
+    {
+        Eigen::Vector3d wp;
+        wp = _current_pos + _point_spacing * double(i) * _dir;
+        vec.push_back(wp);
+        // cout << wp.transpose() << " ; ";
+    }
+
+    // compute initial trajectory
+    const Eigen::Vector4d limits(1.2, 4, 0, 0);
+    ewok::Polynomial3DOptimization<10> po(limits * 0.8);
+    auto traj = po.computeTrajectory(vec);
+
+    // initialize bspline trajectory
+    const int num_points = 7;
+    const double dt = 0.5;
+    _spline_opt =
+        ewok::UniformBSpline3DOptimization<6>::Ptr(new ewok::UniformBSpline3DOptimization<6>(traj, 0.5));
+
+    for(int i = 0; i < num_points; i++)
+    {
+        _spline_opt->addControlPoint(vec[0]);
+    }
+
+    _spline_opt->setNumControlPointsOptimized(num_points);
+    _spline_opt->setDistanceBuffer(rrb);
+    _spline_opt->setLimits(limits);
+
+    // skip the first few waypoints
+    if(skip)
+    {
+        rrb->updateDistance();
+
+        for(int i = 0; i < _skip_num; ++i)
+        {
+            _spline_opt->optimize();
+            _spline_opt->addLastControlPoint();
+        }
+    }
+
+    _traj_ready = true;
+    _traj_start_time = ros::Time::now();
+}
+
+// this callback subscribe to keyboard command. When twist arrives, it generate some waypoints
+// based on current odometry and twist.
 void twistCallback(const geometry_msgs::TwistConstPtr msg)
 {
     // update dir given from keyboard
@@ -182,41 +236,21 @@ void twistCallback(const geometry_msgs::TwistConstPtr msg)
     // generate global trajectory
     if(_dir.norm() != 0)
     {
-        _dir.normalize();
-        _traj_ready = false;
+        generateGlobalTrajectory(false);
+    }
+}
 
-        // generate some waypoints
-        typename ewok::Polynomial3DOptimization<10>::Vector3Array vec;
-        for(int i = 0; i < 20; ++i)
-        {
-            Eigen::Vector3d wp;
-            wp = _current_pos + 0.5 * double(i) * _dir;
-            vec.push_back(wp);
-            cout << wp.transpose() << " ; ";
-        }
+// update global trajectory periodically
+void updateCallback(const ros::TimerEvent& e)
+{
+    if(!_traj_ready) return;
 
-        // compute initial trajectory
-        const Eigen::Vector4d limits(1.2, 4, 0, 0);
-        ewok::Polynomial3DOptimization<10> po(limits * 0.8);
-        auto traj = po.computeTrajectory(vec);
+    double elapsed = ros::Time::now().toSec() - _traj_start_time.toSec();
+    if(elapsed < _traj_update_time) return;
 
-        // initialize bspline trajectory
-        const int num_points = 7;
-        const double dt = 0.5;
-        _spline_opt =
-            ewok::UniformBSpline3DOptimization<6>::Ptr(new ewok::UniformBSpline3DOptimization<6>(traj, 0.5));
-
-        for(int i = 0; i < num_points; i++)
-        {
-            _spline_opt->addControlPoint(vec[0]);
-        }
-
-        _spline_opt->setNumControlPointsOptimized(num_points);
-        _spline_opt->setDistanceBuffer(rrb);
-        _spline_opt->setLimits(limits);
-
-        _traj_ready = true;
-        _traj_start_time = ros::Time::now();
+    if(_dir.norm() != 0)
+    {
+        generateGlobalTrajectory(true);
     }
 }
 
@@ -262,6 +296,20 @@ void trajTimerCallback(const ros::TimerEvent& e)
     traj_pub.publish(traj_marker);
 
     _spline_opt->addLastControlPoint();
+}
+
+void odomCallback(const nav_msgs::OdometryConstPtr msg)
+{
+    _current_pos(0) = msg->pose.pose.position.x;
+    _current_pos(1) = msg->pose.pose.position.y;
+    _current_pos(2) = msg->pose.pose.position.z;
+
+    tf::Quaternion q1(msg->pose.pose.orientation.x, msg->pose.pose.orientation.y,
+                      msg->pose.pose.orientation.z, msg->pose.pose.orientation.w);
+    tf::Matrix3x3 m(q1);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+    _current_yaw = yaw;
 }
 
 void timerCallback(const ros::TimerEvent& e)
@@ -318,12 +366,16 @@ int main(int argc, char** argv)
 
     // keyboard
     ros::Subscriber twist_sub = nh.subscribe("/keyboard/twist", 1, twistCallback);
+    // odometry. We needed an independent subscriber to odometry for real time feedback
+    ros::Subscriber indep_odom_sub = nh.subscribe("/firefly/ground_truth/odometry", 1, odomCallback);
 
     // get parameter
     nh.getParam("/ring_buffer/map_rate", map_rate);
     nh.getParam("/ring_buffer/publish_rate", pub_rate);
-    double interval;
-    nh.getParam("/ring_buffer/traj_interval", interval);
+    nh.getParam("/ring_buffer/point_spacing", _point_spacing);
+    nh.getParam("/ring_buffer/point_num", _point_num);
+    nh.getParam("/ring_buffer/traj_update_time", _traj_update_time);
+    nh.getParam("/ring_buffer/skip_num", _skip_num);
     std::cout << map_rate << "," << pub_rate << std::endl;
 
     _traj_ready = false;
@@ -334,6 +386,9 @@ int main(int argc, char** argv)
 
     // timer for publish trajectory waypoint
     ros::Timer timer2 = nh.createTimer(ros::Duration(0.5), trajTimerCallback);
+
+    // timer for updating global trajectory periodically
+    ros::Timer timer3 = nh.createTimer(ros::Duration(0.1), updateCallback);
 
     ros::Duration(0.5).sleep();
 

@@ -10,7 +10,7 @@ def main():
 
     # initialize pygame to get keyboard event
     pygame.init()
-    window_size = Rect(0, 0, 300, 300)
+    window_size = Rect(0, 0, 150, 150)
     screen = pygame.display.set_mode(window_size.size)
 
     # initialize ros publisher
@@ -19,7 +19,7 @@ def main():
     rate = rospy.Rate(10)
 
     _twist = Twist()
-    vel = 1.5
+    vel = 1.0
     ang = 2.0
     while not rospy.is_shutdown():
         rate.sleep()
