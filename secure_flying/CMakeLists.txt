@@ -29,4 +29,7 @@ add_executable(sim_flying src/sim_flying.cpp)
 target_link_libraries(sim_flying ${PCL_LIBRARIES} ${catkin_LIBRARIES} ${CHOLMOD_LIBRARY} 
 /usr/local/lib/libnlopt.so.0.9.0)
 
+add_executable(mapping src/mapping.cpp)
+target_link_libraries(mapping ${PCL_LIBRARIES} ${catkin_LIBRARIES})
+
 

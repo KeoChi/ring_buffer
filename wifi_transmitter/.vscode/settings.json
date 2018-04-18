@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "core": "cpp",
+        "slist": "cpp",
+        "initializer_list": "cpp"
+    }
+}

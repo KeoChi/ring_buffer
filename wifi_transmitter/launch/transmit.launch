@@ -1,0 +1,6 @@
+<launch>
+    <node name="server" pkg="socket" type="socket_sever" output="screen">
+    </node>
+    <node name="client" pkg="socket" type="socket_client" output="screen">
+    </node>
+</launch>

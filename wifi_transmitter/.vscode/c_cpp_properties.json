@@ -5,7 +5,7 @@
             "includePath": [
                 "/usr/include",
                 "/usr/local/include",
-                "${workspaceRoot}"
+                "${workspaceFolder}"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
@@ -13,7 +13,7 @@
                 "path": [
                     "/usr/include",
                     "/usr/local/include",
-                    "${workspaceRoot}"
+                    "${workspaceFolder}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -27,34 +27,30 @@
             "name": "Linux",
             "includePath": [
                 "/opt/ros/kinetic/include",
+                "${workspaceFolder}",
+                "/usr/include/c++",
+                "/usr/local/include",
+                "/usr/lib/llvm-3.4/lib/clang/3.4/include",
+                "/usr/lib/gcc/x86_64-linux-gnu/6/include",
+                "/usr/include/x86_64-linux-gnu",
+                "/usr/include",
                 "/usr/include/c++/5",
                 "/usr/include/x86_64-linux-gnu/c++/5",
                 "/usr/include/c++/5/backward",
                 "/usr/lib/gcc/x86_64-linux-gnu/5/include",
-                "/usr/local/include",
-                "/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed",
-                "/usr/include/x86_64-linux-gnu",
-                "/usr/include",
-                "${workspaceRoot}",
-                "${workspaceRoot}/ewok_optimization/include",
-                "${workspaceRoot}/ewok_ring_buffer/include",
-                "${workspaceRoot}/ewok_poly_spline/include",
-                "/usr/include/suitesparse"
+                "/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed"
             ],
             "defines": [],
             "intelliSenseMode": "clang-x64",
             "browse": {
                 "path": [
-                    "/opt/ros/kinetic/include",
-                    "/usr/include/c++/5",
-                    "/usr/include/x86_64-linux-gnu/c++/5",
-                    "/usr/include/c++/5/backward",
-                    "/usr/lib/gcc/x86_64-linux-gnu/5/include",
+                    "${workspaceFolder}",
+                    "/usr/include/c++",
                     "/usr/local/include",
-                    "/usr/lib/gcc/x86_64-linux-gnu/5/include-fixed",
+                    "/usr/lib/llvm-3.4/lib/clang/3.4/include",
+                    "/usr/lib/gcc/x86_64-linux-gnu/6/include",
                     "/usr/include/x86_64-linux-gnu",
-                    "/usr/include",
-                    "${workspaceRoot}"
+                    "/usr/include"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
@@ -67,7 +63,7 @@
             "name": "Win32",
             "includePath": [
                 "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
-                "${workspaceRoot}"
+                "${workspaceFolder}"
             ],
             "defines": [
                 "_DEBUG",
@@ -78,7 +74,7 @@
             "browse": {
                 "path": [
                     "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include/*",
-                    "${workspaceRoot}"
+                    "${workspaceFolder}"
                 ],
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": ""
