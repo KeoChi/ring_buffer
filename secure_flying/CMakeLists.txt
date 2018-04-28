@@ -19,15 +19,15 @@ add_definitions(${PCL_DEFINITIONS})
 catkin_package()
 
 include_directories(${PCL_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS})
-include_directories(${EIGEN3_INCLUDE_DIR} ${CHOLMOD_INCLUDE_DIR})
+include_directories(${EIGEN3_INCLUDE_DIR}) #${CHOLMOD_INCLUDE_DIR}#)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/../ewok_ring_buffer/include)
 include_directories(${PROJECT_SOURCE_DIR}/../ewok_optimization/include)
 include_directories(${PROJECT_SOURCE_DIR}/../ewok_poly_spline/include)
 
-add_executable(sim_flying src/sim_flying.cpp)
-target_link_libraries(sim_flying ${PCL_LIBRARIES} ${catkin_LIBRARIES} ${CHOLMOD_LIBRARY} 
-/usr/local/lib/libnlopt.so.0.9.0)
+#add_executable(sim_flying src/sim_flying.cpp)
+#target_link_libraries(sim_flying ${PCL_LIBRARIES} ${catkin_LIBRARIES} ${CHOLMOD_LIBRARY} 
+#/usr/local/lib/libnlopt.so.0.9.0)
 
 add_executable(mapping src/mapping.cpp)
 target_link_libraries(mapping ${PCL_LIBRARIES} ${catkin_LIBRARIES})

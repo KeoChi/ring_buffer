@@ -1,8 +1,5 @@
 #include <ewok/ed_nor_ring_buffer.h>
 
-#include <ewok/polynomial_3d_optimization.h>
-#include <ewok/uniform_bspline_3d_optimization.h>
-
 #include <ros/ros.h>
 
 #include <tf/transform_datatypes.h>
@@ -78,8 +75,9 @@ void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs
     // transform to world frame
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_1(new pcl::PointCloud<pcl::PointXYZRGB>());
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_2(new pcl::PointCloud<pcl::PointXYZRGB>());
-    pcl::transformPointCloud(*cloud_in, *cloud_1, t_c_b);
-    pcl::transformPointCloud(*cloud_1, *cloud_2, transform);
+    //pcl::transformPointCloud(*cloud_in, *cloud_1, t_c_b);
+    //pcl::transformPointCloud(*cloud_1, *cloud_2, transform);
+    pcl::transformPointCloud(*cloud_in, *cloud_2, transform);
 
     // down-sample
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZRGB>());
@@ -116,7 +114,7 @@ void odomCloudCallback(const nav_msgs::OdometryConstPtr& odom, const sensor_msgs
             Eigen::Vector3i origin_idx, offset, diff;
             rrb->getIdx(origin, origin_idx);
             offset = rrb->getVolumeCenter();
-            // std::cout << "origin :" << origin_idx << " center:" << offset << std::endl;
+            std::cout << "origin :" << origin_idx << " center:" << offset << std::endl;
             diff = origin_idx - offset;
             if(diff.array().any())
                 rrb->moveVolume(diff.head<3>());
@@ -169,7 +167,7 @@ int main(int argc, char** argv)
     sync.registerCallback(boost::bind(&odomCloudCallback, _1, _2));
 
     // timer for publish ringbuffer as pointcloud
-    ros::Timer timer1 = nh.createTimer(ros::Duration(0.2), timerCallback);
+    ros::Timer timer1 = nh.createTimer(ros::Duration(1.0), timerCallback);
 
     ros::Duration(0.5).sleep();
 

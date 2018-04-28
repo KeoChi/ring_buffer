@@ -6,10 +6,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <iostream>
-#include "opencv2/core.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/imgproc.hpp"
-#include "opencv2/objdetect.hpp"
 #include "ros/ros.h"
 
 #include <pcl/point_types.h>
@@ -19,14 +15,12 @@
 #define BYTE_SEND_INTERVAL 1
 
 using namespace std;
-using namespace cv;
 int sock_sev;
 struct sockaddr_in s_in;  // address structure
 struct sockaddr_in c_in;
 socklen_t in_len;
 
 // global mat for cloud
-Mat cloud_mat;
 pcl::PointCloud<pcl::PointXYZ> cloud;
 bool cloud_ready = false;
 int point_num = 0;
@@ -56,7 +50,6 @@ int send_data(double *data, long int size)  // 255k at most
     buffer[7] = (double)(last_pkg_bytes % 256);
 
     sendto(sock_sev, buffer, 1024, 0, (struct sockaddr *)&c_in, sizeof(struct sockaddr));
-    waitKey(BYTE_SEND_INTERVAL);
 
     /*send data*/
     for(int j = 0; j < pkg_num; j++)
@@ -67,7 +60,6 @@ int send_data(double *data, long int size)  // 255k at most
         for(int i = 0; i < pkg_size; i++) buffer[i] = *(data + 1024 * j + i);
 
         sendto(sock_sev, buffer, 1024, 0, (struct sockaddr *)&c_in, sizeof(struct sockaddr));
-        waitKey(BYTE_SEND_INTERVAL);
     }
 
     return 1;
@@ -75,6 +67,9 @@ int send_data(double *data, long int size)  // 255k at most
 
 void cloudCallback(const sensor_msgs::PointCloud2ConstPtr &msg)
 {
+    cout << "new cloud " << endl;
+    if(cloud_ready == true) return;
+
     cloud.points.clear();
     pcl::fromROSMsg(*msg, cloud);
     cloud_ready = true;
@@ -83,18 +78,19 @@ void cloudCallback(const sensor_msgs::PointCloud2ConstPtr &msg)
 void timerCallback(const ros::TimerEvent &e)
 {
     cout << "timer create cloud" << endl;
+    if(cloud_ready == true) return;
 
     // create some cloud
     cloud.points.clear();
     int num = 0;
-    for(int i = -5; i <= 5; ++i)
-        for(int j = -5; j <= 5; ++j)
-            for(int k = -5; k <= 5; ++k)
+    for(int i = -15; i <= 15; ++i)
+        for(int j = -15; j <= 15; ++j)
+            for(int k = -15; k <= 15; ++k)
             {
                 pcl::PointXYZ p;
-                p.x = i;
-                p.y = j;
-                p.z = k;
+                p.x = i * 0.1;
+                p.y = j * 0.1;
+                p.z = k * 0.1;
                 num++;
                 cloud.points.push_back(p);
             }
@@ -109,10 +105,12 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
 
     // subscribe to cloud2
-    ros::Subscriber cloud_sub = n.subscribe("ring_buffer/cloud2", 1, cloudCallback);
+    // ros::Subscriber cloud_sub = n.subscribe("/zed/point_cloud/cloud_registered", 1, cloudCallback);
+    ros::Subscriber cloud_sub = n.subscribe("/ring_buffer/cloud2", 1, cloudCallback);
+    ros::Duration(0.5).sleep();
 
     // just for test. Create some cloud and publish
-    ros::Timer timer = n.createTimer(ros::Duration(1.0), timerCallback);
+    // ros::Timer timer = n.createTimer(ros::Duration(1.0), timerCallback);
 
     // socklen_t len;
     unsigned char buf[1024] = "";  // content buff area
@@ -128,7 +126,7 @@ int main(int argc, char **argv)
 
     /*compress paras init*/
     vector<int> param = vector<int>(2);
-    param[0] = CV_IMWRITE_JPEG_QUALITY;
+    // param[0] = CV_IMWRITE_JPEG_QUALITY;
     param[1] = 50;  // default(95) 0-100
 
     vector<double> trans_buff;  // buffer for coding
@@ -159,32 +157,36 @@ int main(int argc, char **argv)
             // encode point cloud
             trans_buff.clear();
             point_num = 0;
-            for(int i = 0; i < 42 && cloud.size() > 0; ++i)
+            for(int i = 0; i < 42 && i < cloud.points.size(); ++i)
             {
-                trans_buff.push_back(cloud.points.at(0).x);
-                trans_buff.push_back(cloud.points.at(0).y);
-                trans_buff.push_back(cloud.points.at(0).z);
-                cloud.points.erase(cloud.points.begin());
+                trans_buff.push_back(cloud.points.at(i).x);
+                trans_buff.push_back(cloud.points.at(i).y);
+                trans_buff.push_back(cloud.points.at(i).z);
 
                 ++point_num;
             }
+            ROS_INFO("before erase");
+            if(cloud.points.size() >= 42)
+                cloud.points.erase(cloud.points.begin(), cloud.points.begin() + 42);
+            else
+                cloud.points.clear();
+            ROS_INFO("after erase");
 
-            cout << "trans buff: " << endl;
-            for(int i = 0; i < trans_buff.size(); ++i)
-            {
-                cout << trans_buff[i] << endl;
-                if(i % 3 == 2) cout << endl;
-            }
+            // cout << "trans buff: " << endl;
+            // for(int i = 0; i < trans_buff.size(); ++i)
+            // {
+            //     cout << trans_buff[i] << endl;
+            //     if(i % 3 == 2) cout << endl;
+            // }
 
             double *buff = &trans_buff[0];
-
             send_data(buff, trans_buff.size());
             cout << "send cloud to client, mat size " << trans_buff.size() << endl;
 
             if(cloud.size() == 0) cloud_ready = false;
         }
 
-        quit_flag = waitKey(33);
+        // quit_flag = waitKey(33);
 
         ros::spinOnce();
     }

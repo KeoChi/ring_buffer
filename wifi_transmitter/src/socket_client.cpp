@@ -6,23 +6,23 @@
 #include <unistd.h>
 #include <iostream>
 #include <string>
-#include "opencv2/core.hpp"
-#include "opencv2/highgui.hpp"
-#include "opencv2/imgproc.hpp"
+//#include "opencv2/core.hpp"
+//#include "opencv2/highgui.hpp"
+//#include "opencv2/imgproc.hpp"
 #include "ros/ros.h"
 
 #include <pcl/point_types.h>
 #include <pcl_conversions/pcl_conversions.h>
 
 //#include <cv.h>
-//#define ADDR "192.168.1.144"
+// #define ADDR "10.42.0.1"
 #define ADDR "127.0.0.1"  //在本机测试用这个地址，如果连接其他电脑需要更换IP
 
 #define SERVERPORT 10001
 #define BYTE_SEND_INTERVAL 1
 
 using namespace std;
-using namespace cv;
+// using namespace cv;
 int sock_clit;
 struct sockaddr_in serv_addr;
 
@@ -40,9 +40,19 @@ int send_data(char *data)  // 255k at most
     buffer[7] = *(data + 2);
 
     sendto(sock_clit, buffer, 8, 0, (struct sockaddr *)&serv_addr, sizeof(struct sockaddr));
-    waitKey(BYTE_SEND_INTERVAL);
+    // waitKey(BYTE_SEND_INTERVAL);
+    ros::Duration(0.001).sleep();
 
     return 1;
+}
+
+void timerCallback(const ros::TimerEvent &e)
+{
+    char send_buff[8] = "";
+    send_buff[0] = 1;
+    send_buff[1] = 2;
+    send_buff[2] = 3;
+    send_data(send_buff);
 }
 
 /* @function main */
@@ -53,10 +63,14 @@ int main(int argc, char **argv)
 
     // publisher to rviz
     ros::Publisher cloud_pub = n.advertise<sensor_msgs::PointCloud2>("client/cloud", 1);
+    ros::Duration(0.5).sleep();
+
+    // timer to send request
+    ros::Timer timer = n.createTimer(ros::Duration(0.001), timerCallback);
 
     /*compress paras init*/
     vector<int> param = vector<int>(2);
-    param[0] = CV_IMWRITE_JPEG_QUALITY;
+    // param[0] = CV_IMWRITE_JPEG_QUALITY;
     param[1] = 50;  // default(95) 0-100
 
     /*socket paras init*/
@@ -98,9 +112,13 @@ int main(int argc, char **argv)
         send_buff[1] = 2;
         send_buff[2] = 3;
         send_data(send_buff);
+        send_data(send_buff);
+        send_data(send_buff);
+        cout << "wait for reply" << endl;
 
         /*recieve*/
         int r_len = recvfrom(sock_clit, buf, 1024, 0, (struct sockaddr *)&c_in, &len);
+        cout << "reply arrive" << endl;
 
         if(r_len > 0)
         {
@@ -131,12 +149,12 @@ int main(int argc, char **argv)
                 }
 
                 /*decode to pcl cloud*/
-                cout << " received vect: " << endl;
-                for(int i = 0; i < point_num * 3; ++i)
-                {
-                    cout << i << " , " << rec_vec[i] << endl;
-                    if(i % 3 == 2) cout << endl;
-                }
+                // cout << " received vect: " << endl;
+                // for(int i = 0; i < point_num * 3; ++i)
+                // {
+                //     cout << i << " , " << rec_vec[i] << endl;
+                //     if(i % 3 == 2) cout << endl;
+                // }
                 if(!rec_vec.size() == 0)
                 {
                     pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -156,7 +174,8 @@ int main(int argc, char **argv)
                     cout << "cloud publish to rviz!" << endl;
                 }
 
-                quit_flag = waitKey(10);
+                // quit_flag = waitKey(10);
+                // ros::Duration(0.01).sleep();
             }
         }
         // if(!input_frame.empty())imshow("client", input_frame);
@@ -165,7 +184,7 @@ int main(int argc, char **argv)
         ros::spinOnce();
     }
 
-    destroyWindow("client");
+    // destroyWindow("client");
     close(sock_clit);
 
     return 0;

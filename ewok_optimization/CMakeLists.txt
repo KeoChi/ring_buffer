@@ -9,7 +9,7 @@ find_package(catkin_simple REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(SuiteSparse REQUIRED)
 
-include_directories(${EIGEN3_INCLUDE_DIR} ${CHOLMOD_INCLUDE_DIR})
+#include_directories(${EIGEN3_INCLUDE_DIR} ${CHOLMOD_INCLUDE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/../ewok_ring_buffer/include)
 
 catkin_simple()
