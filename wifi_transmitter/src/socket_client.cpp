@@ -26,6 +26,9 @@ using namespace std;
 int sock_clit;
 struct sockaddr_in serv_addr;
 
+pcl::PointCloud<pcl::PointXYZ> cloud;
+int point_num, cur_num;
+
 int send_data(char *data)  // 255k at most
 {
     /*send mark*/
@@ -62,16 +65,11 @@ int main(int argc, char **argv)
     ros::NodeHandle n;
 
     // publisher to rviz
-    ros::Publisher cloud_pub = n.advertise<sensor_msgs::PointCloud2>("client/cloud", 1);
+    ros::Publisher cloud_pub = n.advertise<sensor_msgs::PointCloud2>("client/cloud", 500);
     ros::Duration(0.5).sleep();
 
     // timer to send request
-    ros::Timer timer = n.createTimer(ros::Duration(0.001), timerCallback);
-
-    /*compress paras init*/
-    vector<int> param = vector<int>(2);
-    // param[0] = CV_IMWRITE_JPEG_QUALITY;
-    param[1] = 50;  // default(95) 0-100
+    // ros::Timer timer = n.createTimer(ros::Duration(0.001), timerCallback);
 
     /*socket paras init*/
     char get_msg[10] = { 0 };
@@ -91,7 +89,7 @@ int main(int argc, char **argv)
     serv_addr.sin_addr.s_addr = inet_addr(ADDR);  // 注释1
     serv_addr.sin_port = htons(SERVERPORT);
     if(connect(sock_clit, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
-    {  // 注释2
+    {
         cout << "connect error\n";
         return -1;
     }
@@ -102,86 +100,80 @@ int main(int argc, char **argv)
 
     cout << "transmission started" << endl;
 
-    char quit_flag = ' ';
     double buf[1024];  // content buff area
 
+    //  main loop, send request and reveive data
     while(ros::ok())
     {
+        // send request
         char send_buff[8] = "";
         send_buff[0] = 1;
         send_buff[1] = 2;
         send_buff[2] = 3;
         send_data(send_buff);
         send_data(send_buff);
-        send_data(send_buff);
-        cout << "wait for reply" << endl;
 
-        /*recieve*/
-        int r_len = recvfrom(sock_clit, buf, 1024, 0, (struct sockaddr *)&c_in, &len);
-        cout << "reply arrive" << endl;
-
-        if(r_len > 0)
+        // receive all data
+        while(ros::ok())
         {
-            cout << "cloud received!" << endl;
-            /*Verify first package*/
-            if(buf[0] == 1 && buf[1] == 1 && buf[2] == 1)
+            int r_len = recvfrom(sock_clit, buf, 1024, 0, (struct sockaddr *)&c_in, &len);
+            // cout << "reply arrive" << endl;
+
+            if(r_len > 0)
             {
-                int point_num = buf[4];
-                cout << "point num:" << point_num << endl;
-                int pkg_num = buf[5];
-                int last_pkg_bytes = buf[6] * 256 + buf[7];
-                vector<double> rec_vec;
-
-                long int total_size = (pkg_num - 1) * 1024 + last_pkg_bytes;
-                cout << "received data length " << total_size << endl;
-                rec_vec.resize(total_size);
-
-                /*receive and reconstruct data*/
-                for(int i = 0; i < pkg_num; i++)
+                /*Verify first package*/
+                if(buf[0] == 1 && buf[1] == 1 && buf[2] == 1)
                 {
-                    r_len = recvfrom(sock_clit, buf, 1024, 0, (struct sockaddr *)&c_in, &len);
-                    int pkg_size = 1024;
-                    if(i == pkg_num - 1 && last_pkg_bytes != 0) pkg_size = last_pkg_bytes;
+                    point_num = buf[4];
+                    int pkg_num = buf[5];
+                    int last_pkg_bytes = buf[6] * 256 + buf[7];
+                    vector<double> rec_vec;
 
-                    // cout <<"pkg_size "<<pkg_size<<endl;
+                    long int total_size = (pkg_num - 1) * 1024 + last_pkg_bytes;
+                    rec_vec.resize(total_size);
 
-                    for(int j = 0; j < pkg_size; j++) rec_vec[1024 * i + j] = buf[j];
-                }
-
-                /*decode to pcl cloud*/
-                // cout << " received vect: " << endl;
-                // for(int i = 0; i < point_num * 3; ++i)
-                // {
-                //     cout << i << " , " << rec_vec[i] << endl;
-                //     if(i % 3 == 2) cout << endl;
-                // }
-                if(!rec_vec.size() == 0)
-                {
-                    pcl::PointCloud<pcl::PointXYZ> cloud;
-                    for(int i = 0; i < point_num; i++)
+                    /*receive and reconstruct data*/
+                    for(int i = 0; i < pkg_num; i++)
                     {
-                        pcl::PointXYZ p;
-                        p.x = rec_vec.at(3 * i);
-                        p.y = rec_vec.at(3 * i + 1);
-                        p.z = rec_vec.at(3 * i + 2);
-                        cloud.points.push_back(p);
+                        r_len = recvfrom(sock_clit, buf, 1024, 0, (struct sockaddr *)&c_in, &len);
+                        int pkg_size = 1024;
+                        if(i == pkg_num - 1 && last_pkg_bytes != 0) pkg_size = last_pkg_bytes;
+
+                        for(int j = 0; j < pkg_size; j++) rec_vec[1024 * i + j] = buf[j];
                     }
-                    // publish to rviz
-                    sensor_msgs::PointCloud2 cloud2;
-                    pcl::toROSMsg(cloud, cloud2);
-                    cloud2.header.frame_id = "world";
-                    cloud_pub.publish(cloud2);
-                    cout << "cloud publish to rviz!" << endl;
+
+                    if(!rec_vec.size() == 0)
+                    {
+                        for(int i = 0; i < 42 && i < rec_vec.size() / 3; i++)
+                        {
+                            pcl::PointXYZ p;
+                            p.x = rec_vec.at(3 * i);
+                            p.y = rec_vec.at(3 * i + 1);
+                            p.z = rec_vec.at(3 * i + 2);
+                            cloud.points.push_back(p);
+                        }
+                        ++cur_num;
+                        if(cur_num % 100 == 0 || cur_num == point_num)
+                            cout << "total pkg num:" << point_num << ", received num: " << cur_num << endl;
+
+                        // publish to rviz until enough cloud accumulate
+                        if(cur_num == point_num)
+                        {
+                            sensor_msgs::PointCloud2 cloud2;
+                            pcl::toROSMsg(cloud, cloud2);
+                            cloud2.header.frame_id = "world";
+                            cloud_pub.publish(cloud2);
+                            cout << "cloud publish to rviz! \n" << endl;
+                            cloud.points.clear();
+                            cur_num = 0;
+                            break;
+                        }
+                    }
                 }
-
-                // quit_flag = waitKey(10);
-                // ros::Duration(0.01).sleep();
             }
-        }
-        // if(!input_frame.empty())imshow("client", input_frame);
-        // quit_flag = waitKey(20);
 
-        ros::spinOnce();
+            ros::spinOnce();
+        }
     }
 
     // destroyWindow("client");

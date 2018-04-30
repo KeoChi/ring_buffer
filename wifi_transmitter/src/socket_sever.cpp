@@ -24,6 +24,7 @@ socklen_t in_len;
 pcl::PointCloud<pcl::PointXYZ> cloud;
 bool cloud_ready = false;
 int point_num = 0;
+int cur_num = 0;
 
 int send_data(double *data, long int size)  // 255k at most
 {
@@ -44,7 +45,7 @@ int send_data(double *data, long int size)  // 255k at most
     buffer[2] = 1;
     buffer[3] = 1;
     buffer[4] = point_num;
-    cout << "point num:" << point_num << " buf: " << buffer[4] << endl;
+
     buffer[5] = (double)pkg_num;  // 255k at most
     buffer[6] = (double)(last_pkg_bytes / 256);
     buffer[7] = (double)(last_pkg_bytes % 256);
@@ -83,9 +84,9 @@ void timerCallback(const ros::TimerEvent &e)
     // create some cloud
     cloud.points.clear();
     int num = 0;
-    for(int i = -15; i <= 15; ++i)
-        for(int j = -15; j <= 15; ++j)
-            for(int k = -15; k <= 15; ++k)
+    for(int i = -20; i <= 20; ++i)
+        for(int j = -20; j <= 20; ++j)
+            for(int k = -20; k <= 20; ++k)
             {
                 pcl::PointXYZ p;
                 p.x = i * 0.1;
@@ -110,7 +111,7 @@ int main(int argc, char **argv)
     ros::Duration(0.5).sleep();
 
     // just for test. Create some cloud and publish
-    // ros::Timer timer = n.createTimer(ros::Duration(1.0), timerCallback);
+    ros::Timer timer = n.createTimer(ros::Duration(1.0), timerCallback);
 
     // socklen_t len;
     unsigned char buf[1024] = "";  // content buff area
@@ -124,25 +125,18 @@ int main(int argc, char **argv)
     bind(sock_sev, (struct sockaddr *)&s_in, sizeof(struct sockaddr));
     socklen_t len = sizeof(struct sockaddr);
 
-    /*compress paras init*/
-    vector<int> param = vector<int>(2);
-    // param[0] = CV_IMWRITE_JPEG_QUALITY;
-    param[1] = 50;  // default(95) 0-100
-
     vector<double> trans_buff;  // buffer for coding
-
     cout << "begin" << endl;
+    in_len = sizeof(c_in);
 
-    char quit_flag = ' ';
+    memset(recvbuf, 0, sizeof(recvbuf));
 
+    // main loop, wait for request from client and send message
     while(ros::ok())
     {
-        in_len = sizeof(c_in);
-        //清空接收缓存数组
-        memset(recvbuf, 0, sizeof(recvbuf));
-        //开始接收数据
+        // wait for request from client
         int n = recvfrom(sock_sev, recvbuf, sizeof(recvbuf), 0, (struct sockaddr *)&c_in, &in_len);
-        cout << (int)recvbuf[5] << (int)recvbuf[6] << (int)recvbuf[7] << endl;
+        // cout << (int)recvbuf[5] << (int)recvbuf[6] << (int)recvbuf[7] << endl;
 
         if(n > 0)
         {
@@ -154,36 +148,39 @@ int main(int argc, char **argv)
                 ros::Duration(0.2).sleep();
             }
 
-            // encode point cloud
-            trans_buff.clear();
-            point_num = 0;
-            for(int i = 0; i < 42 && i < cloud.points.size(); ++i)
+            // send all cloud
+            point_num = cloud.points.size() / 42;
+            if(cloud.points.size() % 42 != 0) point_num += 1;
+            cur_num = 0;
+
+            while(cloud_ready && ros::ok())
             {
-                trans_buff.push_back(cloud.points.at(i).x);
-                trans_buff.push_back(cloud.points.at(i).y);
-                trans_buff.push_back(cloud.points.at(i).z);
+                // encode point cloud
+                trans_buff.clear();
+                for(int i = 0; i < 42 && i < cloud.points.size(); ++i)
+                {
+                    trans_buff.push_back(cloud.points.at(i).x);
+                    trans_buff.push_back(cloud.points.at(i).y);
+                    trans_buff.push_back(cloud.points.at(i).z);
+                }
+                if(cloud.points.size() >= 42)
+                    cloud.points.erase(cloud.points.begin(), cloud.points.begin() + 42);
+                else
+                    cloud.points.clear();
 
-                ++point_num;
+                double *buff = &trans_buff[0];
+                send_data(buff, trans_buff.size());
+
+                ++cur_num;
+                if(cur_num % 100 == 0 || cur_num == point_num)
+                    cout << "total pkg num: " << point_num << " , sent num:" << cur_num << endl;
+
+                if(cloud.size() == 0)
+                {
+                    cloud_ready = false;
+                    cout << endl;
+                }
             }
-            ROS_INFO("before erase");
-            if(cloud.points.size() >= 42)
-                cloud.points.erase(cloud.points.begin(), cloud.points.begin() + 42);
-            else
-                cloud.points.clear();
-            ROS_INFO("after erase");
-
-            // cout << "trans buff: " << endl;
-            // for(int i = 0; i < trans_buff.size(); ++i)
-            // {
-            //     cout << trans_buff[i] << endl;
-            //     if(i % 3 == 2) cout << endl;
-            // }
-
-            double *buff = &trans_buff[0];
-            send_data(buff, trans_buff.size());
-            cout << "send cloud to client, mat size " << trans_buff.size() << endl;
-
-            if(cloud.size() == 0) cloud_ready = false;
         }
 
         // quit_flag = waitKey(33);

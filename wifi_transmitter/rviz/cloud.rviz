@@ -7,6 +7,7 @@ Panels:
         - /Global Options1
         - /Status1
         - /Axes1
+        - /PointCloud21
         - /PointCloud22
       Splitter Ratio: 0.5
     Tree Height: 463
@@ -60,15 +61,15 @@ Visualization Manager:
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 5
-        Min Value: -5
+        Max Value: 2
+        Min Value: -2
         Value: true
       Axis: Z
       Channel Name: intensity
       Class: rviz/PointCloud2
       Color: 255; 255; 255
       Color Transformer: AxisColor
-      Decay Time: 60
+      Decay Time: 0
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
@@ -77,7 +78,7 @@ Visualization Manager:
       Min Intensity: 0
       Name: PointCloud2
       Position Transformer: XYZ
-      Queue Size: 10
+      Queue Size: 1000
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.100000001
@@ -144,25 +145,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 17.8876381
+      Distance: 10.7651539
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.181277245
-        Y: 0.450468868
-        Z: -1.0736326
+        X: 0.704384267
+        Y: -0.868971229
+        Z: -0.592530608
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.609797418
+      Pitch: 0.644796848
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 1.1136117
+      Yaw: 1.15361261
     Saved: ~
 Window Geometry:
   Displays:
