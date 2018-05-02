@@ -28,6 +28,7 @@ struct sockaddr_in serv_addr;
 
 pcl::PointCloud<pcl::PointXYZ> cloud;
 int point_num, cur_num;
+bool trigger;
 
 int send_data(char *data)  // 255k at most
 {
@@ -51,11 +52,13 @@ int send_data(char *data)  // 255k at most
 
 void timerCallback(const ros::TimerEvent &e)
 {
-    char send_buff[8] = "";
-    send_buff[0] = 1;
-    send_buff[1] = 2;
-    send_buff[2] = 3;
-    send_data(send_buff);
+    //char send_buff[8] = "";
+    //send_buff[0] = 1;
+    //send_buff[1] = 2;
+    //send_buff[2] = 3;
+    //send_data(send_buff);
+    trigger = true;
+
 }
 
 /* @function main */
@@ -69,7 +72,8 @@ int main(int argc, char **argv)
     ros::Duration(0.5).sleep();
 
     // timer to send request
-    // ros::Timer timer = n.createTimer(ros::Duration(0.001), timerCallback);
+    trigger = false;
+    ros::Timer timer = n.createTimer(ros::Duration(1), timerCallback);
 
     /*socket paras init*/
     char get_msg[10] = { 0 };
@@ -78,6 +82,13 @@ int main(int argc, char **argv)
     sock_clit = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     struct sockaddr_in c_in;
     socklen_t len = sizeof(struct sockaddr);
+
+    struct timeval timeout;
+    timeout.tv_sec = 1;//秒
+    timeout.tv_usec = 0;//微秒
+    if (setsockopt(sock_clit, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) == -1) {
+        cout<<"setsockopt failed:"<<endl;
+    }
 
     if(sock_clit == -1)
     {
@@ -169,6 +180,14 @@ int main(int argc, char **argv)
                             break;
                         }
                     }
+
+                    // cout<<"where u are"<<endl;
+                }
+                else
+                {
+
+                    cout<<"I am dead"<<endl;
+                    break;
                 }
             }
 
